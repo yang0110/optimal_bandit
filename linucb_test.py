@@ -5,7 +5,7 @@ from scipy.sparse import csgraph
 import scipy
 import os 
 
-class LINUCB():
+class LINUCB_TEST():
 	def __init__(self, dimension, iteration, item_num, item_feature_matrix, true_user_feature, true_payoffs, gaps, best_arm, best_payoff, alpha, delta, sigma, state):
 		self.state=state
 		self.dimension=dimension
@@ -39,13 +39,13 @@ class LINUCB():
 		self.ucb_matrix=np.zeros((self.iteration, self.item_num))
 		self.payoff_error_matrix=np.zeros((self.iteration, self.item_num))
 		self.item_counter=np.ones(self.item_num)
-		self.ucb_list=np.zeros(self.iteration)
-		self.true_ucb_list=np.zeros(self.iteration)
 
 	def update_beta(self):
 		a = np.linalg.det(self.user_cov)**(1/2)
 		b = np.linalg.det(self.alpha*self.I)**(-1/2)
 		self.beta=self.sigma*np.sqrt(2*np.log(a*b/self.delta))+np.sqrt(self.alpha)*np.linalg.norm(self.user_feature)
+		self.beta=2*self.sigma*np.sqrt(14*np.log(2/self.delta))
+		self.beta=np.sqrt(2*np.log(1/self.delta))
 		self.beta_list.extend([self.beta])
 		self.real_beta=np.sqrt(np.dot(np.dot(self.user_feature-self.true_user_feature, self.user_cov),self.user_feature-self.true_user_feature))
 		self.real_beta_list.extend([self.real_beta])
@@ -57,6 +57,13 @@ class LINUCB():
 		cov_inv=np.linalg.pinv(self.user_cov)
 		self.update_beta()
 		self.beta=self.beta*self.state
+		# if time>=self.iteration/2:
+		# 	self.beta=self.beta*0.5
+		# else:
+		# 	pass
+		self.beta=2*self.sigma*np.sqrt(14*np.log(2/self.delta))
+		self.beta=np.sqrt(2*np.log(1/self.delta))
+
 		for j in range(self.item_num):
 			x=item_fs[j]
 			x_norm=np.sqrt(np.dot(np.dot(x, cov_inv),x))
@@ -78,9 +85,6 @@ class LINUCB():
 		self.item_index_selected.extend([max_index])
 		self.item_counter[max_index]+=1
 		selected_item_feature=item_fs[max_index]
-		x_t_norm=np.sqrt(np.dot(np.dot(selected_item_feature, cov_inv),selected_item_feature))
-		self.ucb_list[time]=self.beta*x_t_norm
-		self.true_ucb_list[time]=np.abs(np.dot(self.user_feature, selected_item_feature)-self.true_payoffs[max_index])
 		true_payoff=self.true_payoffs[max_index]
 		max_ideal_payoff=np.max(self.true_payoffs)
 		regret=max_ideal_payoff-true_payoff
@@ -96,7 +100,7 @@ class LINUCB():
 		cumulative_regret=[0]
 		learning_error_list=[]
 		for time in range(iteration):	
-			print('time/iteration', time, iteration,'~~~LinUCB')
+			print('time/iteration', time, iteration,'~~~LinUCB TEST')
 			#self.delta=1/(1+time)
 			true_payoff, selected_item_feature, regret=self.select_item(time)
 			self.update_user_feature(true_payoff, selected_item_feature)
@@ -104,4 +108,4 @@ class LINUCB():
 			cumulative_regret.extend([cumulative_regret[-1]+regret])
 			learning_error_list.extend([error])
 
-		return cumulative_regret[1:], learning_error_list, self.beta_list, self.real_beta_list, self.item_index_selected, self.index_matrix, self.x_norm_matrix, self.mean_matrix, self.gaps_ucb, self.est_gaps_ucb, self.best_index, self.ucb_matrix, self.payoff_error_matrix, self.ucb_list, self.true_ucb_list
+		return cumulative_regret[1:], learning_error_list, self.beta_list, self.real_beta_list, self.item_index_selected, self.index_matrix, self.x_norm_matrix, self.mean_matrix, self.gaps_ucb, self.est_gaps_ucb, self.best_index, self.ucb_matrix, self.payoff_error_matrix
