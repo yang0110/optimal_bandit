@@ -34,6 +34,7 @@ class LSE():
 		self.current_est_y_list=np.zeros(self.item_num)
 		self.avg_x_norm_matrix=np.zeros((self.item_num, self.iteration))
 		self.avg_est_y_matrix=np.zeros((self.item_num, self.iteration))
+		self.phase_length=np.zeros(self.item_num)
 
 	def initalize(self):
 		for i in range(self.item_num):
@@ -131,6 +132,13 @@ class LSE():
 		for i in self.item_set:
 			current_x_norm=self.current_x_norm_list[i]
 			current_est_y=self.current_est_y_list[i]
+			if self.remove_count==0:
+				hist_x_norm=0
+				hist_est_y=0
+			else:
+				hist_x_norm=self.hist_x_norm_dict[i]
+				hist_est_y=self.hist_est_y_dict[i]
+				
 			avg_est_y=current_est_y
 			avg_x_norm=current_x_norm
 
@@ -167,6 +175,7 @@ class LSE():
 		if self.remove==True:
 			self.remove_count+=1
 			self.remove_time_list.extend([time])
+			self.phase_length[self.remove_count]=time-self.phase_length[self.remove_count-1]
 			for i in self.item_set:
 				x=self.item_feature[i]
 				hist_mean=np.dot(self.user_f, x)
@@ -188,6 +197,7 @@ class LSE():
 		error=np.zeros(self.iteration)
 		for time in range(self.iteration):
 			print('time/iteration, %s/%s, item_num=%s, remove=%s ~~~~~ LSE'%(time, iteration, len(self.item_set), self.remove))
+			print('self.phase_length', self.phase_length)
 			self.update_beta(time)
 			x,y,regret=self.select_arm(time)
 			self.update_feature(x,y)
