@@ -25,7 +25,9 @@ class SE():
 		if time==0:
 			pass 
 		else:
-			self.beta=2*self.sigma*np.sqrt(14*np.log(2*self.item_num*np.log2(time/self.delta)))+np.sqrt(self.alpha)
+			self.beta=2*self.sigma*np.sqrt(14*np.log(2*self.item_num*np.log2(self.iteration/self.delta)))+np.sqrt(self.alpha)
+			self.gamma=np.sqrt(2*np.log(1/self.delta))
+			self.gamma=self.beta
 
 	def select_arm(self, time):
 		x_norm_list=np.zeros(self.item_num)

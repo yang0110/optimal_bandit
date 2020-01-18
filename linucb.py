@@ -21,7 +21,7 @@ class LINUCB():
 
 	def find_beta(self, time):
 		# self.beta=2*self.sigma*np.sqrt(14*np.log(2*self.item_num*np.log2(time/self.delta)))+np.sqrt(self.alpha)
-		self.beta=np.sqrt(self.alpha)+np.sqrt(2*np.log(1/self.delta)+self.dimension*np.log(1+time/(self.dimension*self.alpha)))
+		self.beta=np.sqrt(self.alpha)+np.sqrt(2*np.log(1/self.delta)+self.dimension*np.log(1+self.iteration/(self.dimension*self.alpha)))
 		self.beta=self.beta*self.state
 
 	def select_arm(self, time):

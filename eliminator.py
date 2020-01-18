@@ -18,6 +18,7 @@ class ELI():
 		self.user_f=np.zeros(self.dimension)
 		self.item_set=list(range(self.item_num))
 		self.x_norm_matrix=np.zeros((self.item_num, self.iteration))
+		self.est_y_matrix=np.zeros((self.item_num, self.iteration))
 		self.low_ucb_list=np.zeros(self.item_num)
 		self.upper_ucb_list=np.zeros(self.item_num)
 		self.item_index=np.zeros(self.iteration)
@@ -26,7 +27,7 @@ class ELI():
 		if time==0:
 			pass 
 		else:
-			self.beta=2*self.sigma*np.sqrt(14*np.log(2*self.item_num*np.log2(time/self.delta)))+np.sqrt(self.alpha)
+			self.beta=2*self.sigma*np.sqrt(14*np.log(2*self.item_num*np.log2(self.iteration/self.delta)))+np.sqrt(self.alpha)
 
 	def select_arm(self, time):
 		self.low_ucb_list=np.zeros(self.item_num)
@@ -39,6 +40,7 @@ class ELI():
 			x_norm_list[i]=x_norm
 			self.x_norm_matrix[i,time]=x_norm 
 			est_y=np.dot(self.user_f, x)
+			self.est_y_matrix[i,time]=est_y
 			self.low_ucb_list[i]=est_y-self.beta*x_norm 
 			self.upper_ucb_list[i]=est_y+self.beta*x_norm
 
@@ -82,7 +84,7 @@ class ELI():
 				cum_regret.extend([cum_regret[-1]+regret])
 				error[time]=np.linalg.norm(self.user_f-self.user_feature)
 
-		return cum_regret, error, self.item_index, self.x_norm_matrix
+		return cum_regret, error, self.item_index, self.x_norm_matrix, self.est_y_matrix
 
 
 

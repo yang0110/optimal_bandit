@@ -24,7 +24,7 @@ sigma=0.1# noise
 delta=0.1# high probability
 alpha=1 # regularizer
 state=1 # small beta (exploitation), large beta(exploration), 1: true beta
-combine_method=1
+combine_method=2
 lambda_=1
 
 item_feature=Normalizer().fit_transform(np.random.normal(size=(item_num, dimension)))
@@ -49,11 +49,11 @@ linucb_regret, linucb_error, linucb_item_index, linucb_x_norm_matrix=linucb_mode
 
 linucb_eli_regret, linucb_eli_error, linucb_eli_item_index, linucb_eli_x_norm_matrix=linucb_eli_model.run(iteration)
 
-eli_regret, eli_error, eli_item_index, eli_x_norm_matrix=eli_model.run(iteration)
+eli_regret, eli_error, eli_item_index, eli_x_norm_matrix, eli_est_y_matrix=eli_model.run(iteration)
 
 se_regret, se_error, se_item_index, se_x_norm_matrix=se_model.run(iteration)
 
-lse_regret, lse_error, lse_item_index, lse_x_norm_matrix, lse_avg_x_norm_matrix=lse_model.run(iteration)
+lse_regret, lse_error, lse_item_index, lse_x_norm_matrix, lse_est_y_matrix,lse_avg_x_norm_matrix, lse_avg_est_y_matrix=lse_model.run(iteration)
 
 plt.figure(figsize=(5,5))
 plt.plot(linucb_regret, label='LinUCB')
@@ -89,36 +89,36 @@ ax[1].legend(loc=1)
 plt.show()
 
 
+# fig, ax=plt.subplots(1,2)
+# for i in range(item_num):
+# 	ax[0].plot(eli_x_norm_matrix[i], label='arm=%s'%(i))
+# 	ax[1].plot(se_x_norm_matrix[i], label='arm=%s'%(i))
+# ax[0].set_title('ELI (Best arm=%s)'%(best_arm))
+# ax[1].set_title('SE (Best arm=%s)'%(best_arm))
+# ax[0].set_ylabel('x_norm')
+# ax[0].legend(loc=1)
+# ax[1].legend(loc=1)
+# plt.show()
+
+# fig, ax=plt.subplots(1,2)
+# for i in range(item_num):
+# 	ax[0].plot(se_x_norm_matrix[i], label='arm=%s'%(i))
+# 	ax[1].plot(lse_x_norm_matrix[i], label='arm=%s'%(i))
+# ax[0].set_title('SE (Best arm=%s)'%(best_arm))
+# ax[1].set_title('LSE (current) (Best arm=%s)'%(best_arm))
+# ax[0].set_ylabel('x_norm')
+# ax[0].legend(loc=1)
+# ax[1].legend(loc=1)
+# plt.show()
+
+
+
 fig, ax=plt.subplots(1,2)
 for i in range(item_num):
 	ax[0].plot(eli_x_norm_matrix[i], label='arm=%s'%(i))
-	ax[1].plot(se_x_norm_matrix[i], label='arm=%s'%(i))
+	ax[1].plot(lse_avg_x_norm_matrix[i], label='arm=%s'%(i))
 ax[0].set_title('ELI (Best arm=%s)'%(best_arm))
-ax[1].set_title('SE (Best arm=%s)'%(best_arm))
-ax[0].set_ylabel('x_norm')
-ax[0].legend(loc=1)
-ax[1].legend(loc=1)
-plt.show()
-
-fig, ax=plt.subplots(1,2)
-for i in range(item_num):
-	ax[0].plot(se_x_norm_matrix[i], label='arm=%s'%(i))
-	ax[1].plot(lse_x_norm_matrix[i], label='arm=%s'%(i))
-ax[0].set_title('SE (Best arm=%s)'%(best_arm))
-ax[1].set_title('LSE (current) (Best arm=%s)'%(best_arm))
-ax[0].set_ylabel('x_norm')
-ax[0].legend(loc=1)
-ax[1].legend(loc=1)
-plt.show()
-
-
-
-fig, ax=plt.subplots(1,2)
-for i in range(item_num):
-	ax[0].plot(eli_x_norm_matrix[i], label='arm=%s'%(i))
-	ax[1].plot(lse_x_norm_matrix[i], label='arm=%s'%(i))
-ax[0].set_title('ELI (Best arm=%s)'%(best_arm))
-ax[1].set_title('LSE (current) (Best arm=%s)'%(best_arm))
+ax[1].set_title('LSE (combine) (Best arm=%s)'%(best_arm))
 ax[0].set_ylabel('x_norm')
 ax[0].legend(loc=1)
 ax[1].legend(loc=1)
@@ -131,6 +131,28 @@ for i in range(item_num):
 ax[0].set_title('LSE (current) (Best arm=%s)'%(best_arm))
 ax[1].set_title('LSE (combined) (Best arm=%s)'%(best_arm))
 ax[0].set_ylabel('x_norm')
+ax[0].legend(loc=1)
+ax[1].legend(loc=1)
+plt.show()
+
+
+fig, ax=plt.subplots(1,2)
+for i in range(item_num):
+	ax[0].plot(lse_est_y_matrix[i], label='arm=%s'%(i))
+	ax[1].plot(lse_x_norm_matrix[i], label='arm=%s'%(i))
+ax[0].set_title('LSE est_y (current) (Best arm=%s)'%(best_arm))
+ax[1].set_title('LSE x norm (current) (Best arm=%s)'%(best_arm))
+ax[0].legend(loc=1)
+ax[1].legend(loc=1)
+plt.show()
+
+
+fig, ax=plt.subplots(1,2)
+for i in range(item_num):
+	ax[0].plot(lse_avg_est_y_matrix[i], label='arm=%s'%(i))
+	ax[1].plot(lse_avg_x_norm_matrix[i], label='arm=%s'%(i))
+ax[0].set_title('LSE est_y (combined) (Best arm=%s)'%(best_arm))
+ax[1].set_title('LSE x_norm (combined) (Best arm=%s)'%(best_arm))
 ax[0].legend(loc=1)
 ax[1].legend(loc=1)
 plt.show()

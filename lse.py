@@ -20,7 +20,8 @@ class LSE():
 		self.user_f=np.zeros(self.dimension)
 		self.item_set=list(range(self.item_num))
 		self.item_index=np.zeros(self.iteration)
-		self.x_norm_matrix=np.zeros((self.item_num, self.iteration))
+		self.current_x_norm_matrix=np.zeros((self.item_num, self.iteration))
+		self.current_est_y_matrix=np.zeros((self.item_num, self.iteration))
 		self.low_ucb_list=np.zeros(self.item_num)
 		self.upper_ucb_list=np.zeros(self.item_num)
 		self.remove=False
@@ -35,6 +36,8 @@ class LSE():
 		self.avg_x_norm_matrix=np.zeros((self.item_num, self.iteration))
 		self.avg_est_y_matrix=np.zeros((self.item_num, self.iteration))
 		self.phase_length=np.zeros(self.item_num)
+		self.average_weights=None
+		self.hist_gap_dict={}
 
 	def initalize(self):
 		for i in range(self.item_num):
@@ -42,14 +45,15 @@ class LSE():
 			self.hist_x_norm_dict[i]=[]
 			self.hist_low_ucb_dict[i]=[]
 			self.hist_upper_ucb_dict[i]=[]
+			self.hist_gap_dict[i]=[]
 
 	def update_beta(self, time):
 		if time==0:
 			pass 
 		else:
-			self.beta=2*self.sigma*np.sqrt(14*np.log(2*self.item_num*np.log2(time/self.delta)))+np.sqrt(self.alpha)
-			# self.gamma=np.sqrt(2*np.log(1/self.delta))
+			self.beta=2*self.sigma*np.sqrt(14*np.log(2*self.item_num*np.log2(self.iteration/self.delta)))+np.sqrt(self.alpha)
 			self.gamma=self.beta
+			# self.gamma=np.sqrt(2*np.log(1/self.delta))
 
 
 	def select_arm(self, time):
@@ -63,8 +67,9 @@ class LSE():
 			x=self.item_feature[i]
 			x_norm=np.sqrt(np.dot(np.dot(x, cov_inv),x))
 			x_norm_list[i]=x_norm 
-			self.x_norm_matrix[i,time]=x_norm 
+			self.current_x_norm_matrix[i,time]=x_norm 
 			est_y=np.dot(self.user_f, x)
+			self.current_est_y_matrix[i,time]=est_y
 			self.current_x_norm_list[i]=x_norm 
 			self.current_est_y_list[i]=est_y 
 
@@ -94,11 +99,11 @@ class LSE():
 				hist_x_norm=self.hist_x_norm_dict[i]
 				hist_est_y=self.hist_est_y_dict[i]
 
-			avg_x_norm=self.gamma*np.mean(hist_x_norm)+self.lambda_*self.beta*current_x_norm
-			avg_est_y=np.mean(hist_est_y)+self.lambda_*current_est_y
+			avg_x_norm=self.gamma*np.average(hist_x_norm, weights=self.average_weights)+self.lambda_*self.beta*current_x_norm
+			avg_est_y=np.average(hist_est_y, weights=self.average_weights)+self.lambda_*current_est_y
 
-			self.low_ucb_list[i]=avg_est_y-avg_x_norm
-			self.upper_ucb_list[i]=avg_est_y+avg_x_norm
+			self.low_ucb_list[i]=avg_est_y-self.lambda_*self.beta*current_x_norm
+			self.upper_ucb_list[i]=avg_est_y+self.lambda_*self.beta*current_x_norm
 
 			self.avg_est_y_matrix[i,time]=avg_est_y
 			self.avg_x_norm_matrix[i,time]=avg_x_norm
@@ -113,7 +118,9 @@ class LSE():
 				hist_x_norm=0
 				hist_est_y=0
 			else:
-				phase_index=np.argmin(np.array(self.hist_x_norm_dict[i]))
+				phase_index=np.argmax(self.hist_gap_dict[i])
+				print('phase_index', phase_index)
+				print('self.hist_gap_dict[i]', self.hist_gap_dict[i])
 				hist_x_norm=self.hist_x_norm_dict[i][phase_index]
 				hist_est_y=self.hist_est_y_dict[i][phase_index]
 
@@ -176,14 +183,17 @@ class LSE():
 			self.remove_count+=1
 			self.remove_time_list.extend([time])
 			self.phase_length[self.remove_count]=time-self.phase_length[self.remove_count-1]
+			length_ratios=self.phase_length/np.sum(self.phase_length)
+			self.average_weights=length_ratios[1:self.remove_count+1]
 			for i in self.item_set:
 				x=self.item_feature[i]
 				hist_mean=np.dot(self.user_f, x)
-				hist_x_norm=self.x_norm_matrix[i,time]
+				hist_x_norm=self.current_x_norm_matrix[i,time]
 				self.hist_est_y_dict[i].extend([hist_mean])
 				self.hist_x_norm_dict[i].extend([hist_x_norm])
 				self.hist_low_ucb_dict[i].extend([hist_mean-self.beta*hist_x_norm])
 				self.hist_upper_ucb_dict[i].extend([hist_mean+self.beta*hist_x_norm])
+				self.hist_gap_dict[i].extend([np.max(self.low_ucb_list)-self.upper_ucb_list[i]])
 
 			self.cov=self.alpha*np.identity(self.dimension)
 			self.bias=np.zeros(self.dimension)
@@ -197,7 +207,9 @@ class LSE():
 		error=np.zeros(self.iteration)
 		for time in range(self.iteration):
 			print('time/iteration, %s/%s, item_num=%s, remove=%s ~~~~~ LSE'%(time, iteration, len(self.item_set), self.remove))
-			print('self.phase_length', self.phase_length)
+			# print('self.phase_length', self.phase_length)
+			# print('average_weights', self.average_weights)
+			# print('self.hist_gap_dict', self.hist_gap_dict)
 			self.update_beta(time)
 			x,y,regret=self.select_arm(time)
 			self.update_feature(x,y)
@@ -205,7 +217,7 @@ class LSE():
 			self.reset(time)
 			cum_regret.extend([cum_regret[-1]+regret])
 			error[time]=np.linalg.norm(self.user_f-self.user_feature)
-		return cum_regret, error, self.item_index, self.x_norm_matrix, self.avg_x_norm_matrix
+		return cum_regret, error, self.item_index, self.current_x_norm_matrix, self.current_est_y_matrix, self.avg_x_norm_matrix, self.avg_est_y_matrix
 
 
 
