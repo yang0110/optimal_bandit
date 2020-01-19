@@ -12,6 +12,7 @@ class SE():
 		self.delta=delta 
 		self.sigma=sigma 
 		self.beta=0
+		self.gamma=0
 		self.cov=self.alpha*np.identity(self.dimension)
 		self.bias=np.zeros(self.dimension)
 		self.user_f=np.zeros(self.dimension)
@@ -25,9 +26,10 @@ class SE():
 		if time==0:
 			pass 
 		else:
+			# self.beta=np.sqrt(self.alpha)+np.sqrt(2*np.log(1/self.delta)+self.dimension*np.log(1+self.iteration/(self.dimension*self.alpha)))
 			self.beta=2*self.sigma*np.sqrt(14*np.log(2*self.item_num*np.log2(self.iteration/self.delta)))+np.sqrt(self.alpha)
-			self.gamma=np.sqrt(2*np.log(1/self.delta))
-			self.gamma=self.beta
+			# self.gamma=np.sqrt(2*np.log(1/self.delta))
+			# self.gamma=self.beta
 
 	def select_arm(self, time):
 		x_norm_list=np.zeros(self.item_num)

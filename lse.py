@@ -38,6 +38,9 @@ class LSE():
 		self.phase_length=np.zeros(self.item_num)
 		self.average_weights=None
 		self.hist_gap_dict={}
+		self.max_lower_bound_list=[0]
+		self.upper_bound_dict={}
+		self.max_low=0
 
 	def initalize(self):
 		for i in range(self.item_num):
@@ -46,6 +49,7 @@ class LSE():
 			self.hist_low_ucb_dict[i]=[]
 			self.hist_upper_ucb_dict[i]=[]
 			self.hist_gap_dict[i]=[]
+			self.upper_bound_dict[i]=[10]
 
 	def update_beta(self, time):
 		if time==0:
@@ -54,7 +58,6 @@ class LSE():
 			self.beta=2*self.sigma*np.sqrt(14*np.log(2*self.item_num*np.log2(self.iteration/self.delta)))+np.sqrt(self.alpha)
 			self.gamma=self.beta
 			# self.gamma=np.sqrt(2*np.log(1/self.delta))
-
 
 	def select_arm(self, time):
 		cov_inv=np.linalg.pinv(self.cov)
@@ -98,12 +101,14 @@ class LSE():
 			else:
 				hist_x_norm=self.hist_x_norm_dict[i]
 				hist_est_y=self.hist_est_y_dict[i]
+				hist_x_norm=np.average(hist_x_norm, weights=self.average_weights)
+				hist_est_y=np.average(hist_est_y, weights=self.average_weights)
 
-			avg_x_norm=self.gamma*np.average(hist_x_norm, weights=self.average_weights)+self.lambda_*self.beta*current_x_norm
-			avg_est_y=np.average(hist_est_y, weights=self.average_weights)+self.lambda_*current_est_y
+			avg_x_norm=self.beta*hist_x_norm+self.lambda_*self.beta*current_x_norm
+			avg_est_y=hist_est_y+self.lambda_*current_est_y
 
-			self.low_ucb_list[i]=avg_est_y-self.lambda_*self.beta*current_x_norm
-			self.upper_ucb_list[i]=avg_est_y+self.lambda_*self.beta*current_x_norm
+			self.low_ucb_list[i]=hist_est_y-self.beta*hist_x_norm
+			self.upper_ucb_list[i]=current_est_y+self.beta*current_x_norm
 
 			self.avg_est_y_matrix[i,time]=avg_est_y
 			self.avg_x_norm_matrix[i,time]=avg_x_norm
@@ -111,16 +116,20 @@ class LSE():
 	def combine_method_2(self, time):
 		self.low_ucb_list=np.zeros(self.item_num)
 		self.upper_ucb_list=np.zeros(self.item_num)
+		current_low_ucb_list=np.zeros(self.item_num)
+		current_upper_ucb_list=np.zeros(self.item_num)
 		for i in self.item_set:
 			current_x_norm=self.current_x_norm_list[i]
 			current_est_y=self.current_est_y_list[i]
+			current_low_ucb_list[i]=current_est_y-self.beta*current_x_norm
+			current_upper_ucb_list[i]=current_est_y+self.beta*current_x_norm
 			if self.remove_count==0:
 				hist_x_norm=0
 				hist_est_y=0
 			else:
 				phase_index=np.argmax(self.hist_gap_dict[i])
-				print('phase_index', phase_index)
-				print('self.hist_gap_dict[i]', self.hist_gap_dict[i])
+				# print('phase_index', phase_index)
+				# print('self.hist_gap_dict[i]', self.hist_gap_dict[i])
 				hist_x_norm=self.hist_x_norm_dict[i][phase_index]
 				hist_est_y=self.hist_est_y_dict[i][phase_index]
 
@@ -128,7 +137,8 @@ class LSE():
 			avg_est_y=hist_est_y+self.lambda_*current_est_y
 
 			self.low_ucb_list[i]=avg_est_y-avg_x_norm
-			self.upper_ucb_list[i]=avg_est_y+avg_x_norm
+			self.max_low=np.max([np.max(self.max_lower_bound_list), np.max(current_low_ucb_list)])
+			self.upper_ucb_list[i]=np.min([np.min(self.upper_bound_dict[i]), current_upper_ucb_list[i]])
 
 			self.avg_est_y_matrix[i,time]=avg_est_y
 			self.avg_x_norm_matrix[i,time]=avg_x_norm
@@ -158,8 +168,9 @@ class LSE():
 
 	def eliminate_arm_function(self):
 		self.remove=False
+		print('self.max_low', self.max_low)
 		for i in self.item_set:
-			if np.max(self.low_ucb_list)>self.upper_ucb_list[i]:
+			if len(self.item_set)>0 and self.max_low>self.upper_ucb_list[i]:
 				self.item_set.remove(i)
 				self.remove=True 
 			else:
@@ -194,6 +205,8 @@ class LSE():
 				self.hist_low_ucb_dict[i].extend([hist_mean-self.beta*hist_x_norm])
 				self.hist_upper_ucb_dict[i].extend([hist_mean+self.beta*hist_x_norm])
 				self.hist_gap_dict[i].extend([np.max(self.low_ucb_list)-self.upper_ucb_list[i]])
+				self.max_lower_bound_list.extend([np.max(self.low_ucb_list)])
+				self.upper_bound_dict[i].extend([self.current_est_y_list[i]+self.beta*self.current_x_norm_list[i]])
 
 			self.cov=self.alpha*np.identity(self.dimension)
 			self.bias=np.zeros(self.dimension)
