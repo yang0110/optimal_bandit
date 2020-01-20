@@ -18,14 +18,14 @@ path='../results/'
 user_num=1
 item_num=10
 dimension=5
-phase_num=11
+phase_num=10
 iteration=2**phase_num
 sigma=0.1# noise
 delta=0.1# high probability
 alpha=1 # regularizer
 state=1 # small beta (exploitation), large beta(exploration), 1: true beta
-combine_method=2
-lambda_=1
+combine_method=1
+lambda_=0.1
 
 item_feature=Normalizer().fit_transform(np.random.normal(size=(item_num, dimension)))
 user_feature=np.random.normal(size=dimension)
