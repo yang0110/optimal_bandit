@@ -9,7 +9,7 @@ import os
 from linucb import LINUCB
 from utils import *
 path='../results/'
-#np.random.seed(2018)
+np.random.seed(2018)
 
 
 user_num=1

@@ -10,7 +10,7 @@ from linucb import LINUCB
 from eliminator import ELI
 from utils import *
 path='../results/'
-#np.random.seed(2018)
+np.random.seed(2018)
 
 
 user_num=1
@@ -35,21 +35,21 @@ eli_model=ELI(dimension, phase_num, item_num, user_feature,item_feature, true_pa
 
 eli_regret, eli_error, eli_item_index, eli_x_norm_matrix, eli_est_y_matrix, eli_hist_low_matrix, eli_hist_upper_matrix=eli_model.run(iteration)
 
-
-x=range(iteration)
+length_past_phase=2**phase_num-2**(phase_num-1)
+x=range(length_past_phase)
 
 color_list=matplotlib.cm.get_cmap(name='Paired', lut=None).colors
 
 plt.figure(figsize=(5,5))
 for i in range(item_num):
 	if i==best_arm:
-		plt.plot(x, eli_est_y_matrix[i], color=color_list[i], linewidth=3, label='Best Arm=%s'%(i))
-		plt.plot(x, eli_hist_upper_matrix[i], '-*', color=color_list[i], markevery=0.05, linewidth=2, markersize=8)
-		plt.plot(x, eli_hist_low_matrix[i], '-|', color=color_list[i], markevery=0.05, linewidth=2, markersize=8)
+		plt.plot(x, eli_est_y_matrix[i][-length_past_phase:], color=color_list[i], linewidth=3, label='Best Arm=%s'%(i))
+		plt.plot(x, eli_hist_upper_matrix[i][-length_past_phase:], '-*', color=color_list[i], markevery=0.05, linewidth=2, markersize=8)
+		plt.plot(x, eli_hist_low_matrix[i][-length_past_phase:], '-|', color=color_list[i], markevery=0.05, linewidth=2, markersize=8)
 	else:
-		plt.plot(x, eli_est_y_matrix[i], color=color_list[i], linewidth=3, label='Arm=%s'%(i))
-		plt.plot(x, eli_hist_upper_matrix[i], '-*', color=color_list[i], markevery=0.05, linewidth=2, markersize=8)
-		plt.plot(x, eli_hist_low_matrix[i], '-|', color=color_list[i], markevery=0.05, linewidth=2, markersize=8)
+		plt.plot(x, eli_est_y_matrix[i][-length_past_phase:], color=color_list[i], linewidth=3, label='Arm=%s'%(i))
+		plt.plot(x, eli_hist_upper_matrix[i][-length_past_phase:], '-*', color=color_list[i], markevery=0.05, linewidth=2, markersize=8)
+		plt.plot(x, eli_hist_low_matrix[i][-length_past_phase:], '-|', color=color_list[i], markevery=0.05, linewidth=2, markersize=8)
 
 plt.legend(loc=1, fontsize=10)
 plt.xlabel('Time', fontsize=12)
