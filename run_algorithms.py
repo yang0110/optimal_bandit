@@ -1,5 +1,6 @@
 ## Fix, finite arm set, the set set in each round
 import numpy as np 
+import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set_style("white")
@@ -9,161 +10,146 @@ import os
 from linucb import LINUCB
 from linucb_eli import LINUCB_ELI
 from eliminator import ELI
+from eli_test import ELI_TEST
 from lse import LSE 
+from lse_test import LSE_TEST
 from se import SE
+from se_test import SE_TEST
 from utils import *
 path='../results/'
 # np.random.seed(2018)
 
 user_num=1
-item_num=10
+item_num=5
 dimension=5
 phase_num=10
 iteration=2**phase_num
-sigma=0.1# noise
+sigma=0.01# noise
 delta=0.1# high probability
 alpha=1 # regularizer
 state=1 # small beta (exploitation), large beta(exploration), 1: true beta
-combine_method=1
 lambda_=0.1
+
 
 item_feature=Normalizer().fit_transform(np.random.normal(size=(item_num, dimension)))
 user_feature=np.random.normal(size=dimension)
 user_feature=user_feature/np.linalg.norm(user_feature)
 true_payoffs=np.dot(item_feature, user_feature)
 best_arm=np.argmax(true_payoffs)
+worse_arm=np.argmin(true_payoffs)
 
 
-linucb_model=LINUCB(dimension, iteration, item_num, user_feature,item_feature, true_payoffs, alpha, delta, sigma, state)
-
-linucb_eli_model=LINUCB_ELI(dimension, iteration, item_num, user_feature,item_feature, true_payoffs, alpha, delta, sigma, state)
+linucb_model=LINUCB(dimension, iteration, item_num, user_feature,item_feature, true_payoffs, alpha, delta, sigma, 1)
 
 eli_model=ELI(dimension, phase_num, item_num, user_feature,item_feature, true_payoffs, alpha, delta, sigma)
 
 se_model=SE(dimension, iteration, item_num, user_feature, item_feature, true_payoffs, alpha, delta, sigma)
 
-lse_model=LSE(dimension, iteration, item_num, user_feature, item_feature, true_payoffs, alpha, delta, sigma, lambda_, combine_method)
+se_test_model=SE_TEST(dimension, iteration, item_num, user_feature, item_feature, true_payoffs, alpha, delta, sigma)
+
+
 #####################
 
-linucb_regret, linucb_error, linucb_item_index, linucb_x_norm_matrix=linucb_model.run(iteration)
+linucb_regret, linucb_error, linucb_item_index, linucb_x_norm_matrix, linucb_est_y_matrix, linucb_hist_low_matrix, linucb_hist_upper_matrix=linucb_model.run(iteration)
 
-linucb_eli_regret, linucb_eli_error, linucb_eli_item_index, linucb_eli_x_norm_matrix=linucb_eli_model.run(iteration)
+eli_regret, eli_error, eli_item_index, eli_x_norm_matrix, eli_est_y_matrix, eli_hist_low_matrix, eli_hist_upper_matrix=eli_model.run(iteration)
 
-eli_regret, eli_error, eli_item_index, eli_x_norm_matrix, eli_est_y_matrix=eli_model.run(iteration)
 
-se_regret, se_error, se_item_index, se_x_norm_matrix=se_model.run(iteration)
+se_regret, se_error, se_item_index, se_x_norm_matrix, se_hist_low_matrix, se_hist_upper_matrix=se_model.run(iteration)
 
-lse_regret, lse_error, lse_item_index, lse_x_norm_matrix, lse_est_y_matrix,lse_avg_x_norm_matrix, lse_avg_est_y_matrix=lse_model.run(iteration)
+se_test_regret, se_test_error, se_test_item_index, se_test_x_norm_matrix, se_test_hist_low_matrix, se_test_hist_upper_matrix=se_test_model.run(iteration)
 
 plt.figure(figsize=(5,5))
 plt.plot(linucb_regret, label='LinUCB')
-plt.plot(linucb_eli_regret, label='LinUCB ELI')
 plt.plot(eli_regret, label='Eliminator')
 plt.plot(se_regret, label='SE')
-plt.plot(lse_regret, label='LSE')
+plt.plot(se_test_regret, label='SE TEST')
 plt.legend(loc=0, fontsize=12)
 plt.xlabel('Time', fontsize=12)
 plt.ylabel('Cumulative Regret', fontsize=12)
+plt.tight_layout()
+plt.savefig(path+'regret'+'.png', dpi=100)
 plt.show()
 
 plt.figure(figsize=(5,5))
 plt.plot(linucb_error, label='LinUCB')
-plt.plot(linucb_eli_error, label='LinUCB ELI')
 plt.plot(eli_error, label='Eliminator')
 plt.plot(se_error, label='SE')
-plt.plot(lse_error, label='LSE')
+plt.plot(se_test_error, label='SE TEST')
 plt.legend(loc=0, fontsize=12)
 plt.xlabel('Time', fontsize=12)
+plt.ylabel('Error', fontsize=12)
+plt.tight_layout()
 plt.show()
 
 
-fig, ax=plt.subplots(1,2)
+
+x=range(iteration)
+color_list=matplotlib.cm.get_cmap(name='Paired', lut=None).colors
+
+
+plt.figure(figsize=(8,6))
 for i in range(item_num):
-	ax[0].plot(linucb_x_norm_matrix[i], label='arm=%s'%(i))
-	ax[1].plot(linucb_eli_x_norm_matrix[i], label='arm=%s'%(i))
-ax[0].set_title('LinUCB (Best arm=%s)'%(best_arm))
-ax[1].set_title('LinUCB ELI (Best arm=%s)'%(best_arm))
-ax[0].set_ylabel('x_norm')
-ax[0].legend(loc=1)
-ax[1].legend(loc=1)
+	#plt.plot(x, linucb_est_y_matrix[i], color=color_list[i], linewidth=3, label='Arm=%s'%(i))
+	plt.plot(x, linucb_hist_upper_matrix[i], '-.', color=color_list[i], markevery=0.1, linewidth=2, markersize=8, label='Arm=%s'%(i))
+	plt.plot(x, linucb_hist_low_matrix[i], '-|', color=color_list[i], markevery=0.1, linewidth=2, markersize=8)
+
+plt.legend(loc=1, fontsize=10)
+plt.ylim([-4,4])
+plt.xlabel('Time', fontsize=12)
+plt.ylabel('Payoff Interval', fontsize=12)
+plt.title('LinUCB: Best Arm=%s, Worst Arm=%s'%(best_arm, worse_arm), fontsize=12)
+plt.tight_layout()
+plt.savefig(path+'linucb_payoff_interval_each_arm'+'.png', dpi=100)
 plt.show()
 
-
-# fig, ax=plt.subplots(1,2)
-# for i in range(item_num):
-# 	ax[0].plot(eli_x_norm_matrix[i], label='arm=%s'%(i))
-# 	ax[1].plot(se_x_norm_matrix[i], label='arm=%s'%(i))
-# ax[0].set_title('ELI (Best arm=%s)'%(best_arm))
-# ax[1].set_title('SE (Best arm=%s)'%(best_arm))
-# ax[0].set_ylabel('x_norm')
-# ax[0].legend(loc=1)
-# ax[1].legend(loc=1)
-# plt.show()
-
-# fig, ax=plt.subplots(1,2)
-# for i in range(item_num):
-# 	ax[0].plot(se_x_norm_matrix[i], label='arm=%s'%(i))
-# 	ax[1].plot(lse_x_norm_matrix[i], label='arm=%s'%(i))
-# ax[0].set_title('SE (Best arm=%s)'%(best_arm))
-# ax[1].set_title('LSE (current) (Best arm=%s)'%(best_arm))
-# ax[0].set_ylabel('x_norm')
-# ax[0].legend(loc=1)
-# ax[1].legend(loc=1)
-# plt.show()
-
-
-
-fig, ax=plt.subplots(1,2)
+plt.figure(figsize=(8,6))
 for i in range(item_num):
-	ax[0].plot(eli_x_norm_matrix[i], label='arm=%s'%(i))
-	ax[1].plot(lse_avg_x_norm_matrix[i], label='arm=%s'%(i))
-ax[0].set_title('ELI (Best arm=%s)'%(best_arm))
-ax[1].set_title('LSE (combine) (Best arm=%s)'%(best_arm))
-ax[0].set_ylabel('x_norm')
-ax[0].legend(loc=1)
-ax[1].legend(loc=1)
+	#plt.plot(x, eli_est_y_matrix[i], color=color_list[i], linewidth=3, label='Arm=%s'%(i))
+	plt.plot(x, se_hist_upper_matrix[i], '-.', color=color_list[i], markevery=0.05, linewidth=2, markersize=8, label='Arm=%s'%(i))
+	plt.plot(x, se_hist_low_matrix[i], '-|', color=color_list[i], markevery=0.05, linewidth=2, markersize=8)
+
+plt.legend(loc=1, fontsize=10)
+plt.xlabel('Time', fontsize=12)
+plt.ylabel('Payoff Interval', fontsize=12)
+plt.ylim([-2,2])
+plt.title('SE: Best Arm=%s, Worst Arm=%s'%(best_arm, worse_arm), fontsize=12)
+plt.tight_layout()
+plt.savefig(path+'se_payoff_interval_each_arm'+'.png', dpi=100)
 plt.show()
 
-fig, ax=plt.subplots(1,2)
+
+plt.figure(figsize=(8,6))
 for i in range(item_num):
-	ax[0].plot(lse_x_norm_matrix[i], label='arm=%s'%(i))
-	ax[1].plot(lse_avg_x_norm_matrix[i], label='arm=%s'%(i))
-ax[0].set_title('LSE (current) (Best arm=%s)'%(best_arm))
-ax[1].set_title('LSE (combined) (Best arm=%s)'%(best_arm))
-ax[0].set_ylabel('x_norm')
-ax[0].legend(loc=1)
-ax[1].legend(loc=1)
+	#plt.plot(x, eli_est_y_matrix[i], color=color_list[i], linewidth=3, label='Arm=%s'%(i))
+	plt.plot(x, se_test_hist_upper_matrix[i], '-.', color=color_list[i], markevery=0.05, linewidth=2, markersize=8, label='Arm=%s'%(i))
+	plt.plot(x, se_test_hist_low_matrix[i], '-|', color=color_list[i], markevery=0.05, linewidth=2, markersize=8)
+
+plt.legend(loc=1, fontsize=10)
+plt.xlabel('Time', fontsize=12)
+plt.ylabel('Payoff Interval', fontsize=12)
+plt.ylim([-2,2])
+plt.title('SE-TEST: Best Arm=%s, Worst Arm=%s'%(best_arm, worse_arm), fontsize=12)
+plt.tight_layout()
+plt.savefig(path+'se_test_payoff_interval_each_arm'+'.png', dpi=100)
 plt.show()
 
 
-fig, ax=plt.subplots(1,2)
+plt.figure(figsize=(8,6))
 for i in range(item_num):
-	ax[0].plot(lse_est_y_matrix[i], label='arm=%s'%(i))
-	ax[1].plot(lse_x_norm_matrix[i], label='arm=%s'%(i))
-ax[0].set_title('LSE est_y (current) (Best arm=%s)'%(best_arm))
-ax[1].set_title('LSE x norm (current) (Best arm=%s)'%(best_arm))
-ax[0].legend(loc=1)
-ax[1].legend(loc=1)
+	#plt.plot(x, eli_est_y_matrix[i], color=color_list[i], linewidth=3, label='Arm=%s'%(i))
+	plt.plot(x, eli_hist_upper_matrix[i], '-.', color=color_list[i], markevery=0.05, linewidth=2, markersize=8, label='Arm=%s'%(i))
+	plt.plot(x, eli_hist_low_matrix[i], '-|', color=color_list[i], markevery=0.05, linewidth=2, markersize=8)
+
+plt.legend(loc=1, fontsize=10)
+plt.xlabel('Time', fontsize=12)
+plt.ylabel('Payoff Interval', fontsize=12)
+#plt.ylim([-4,4])
+plt.title('Eliminator: Best Arm=%s, Worst Arm=%s'%(best_arm, worse_arm), fontsize=12)
+plt.tight_layout()
+plt.savefig(path+'eliminator_payoff_interval_each_arm'+'.png', dpi=100)
 plt.show()
 
-
-fig, ax=plt.subplots(1,2)
-for i in range(item_num):
-	ax[0].plot(lse_avg_est_y_matrix[i], label='arm=%s'%(i))
-	ax[1].plot(lse_avg_x_norm_matrix[i], label='arm=%s'%(i))
-ax[0].set_title('LSE est_y (combined) (Best arm=%s)'%(best_arm))
-ax[1].set_title('LSE x_norm (combined) (Best arm=%s)'%(best_arm))
-ax[0].legend(loc=1)
-ax[1].legend(loc=1)
-plt.show()
-
-# fig, ax=plt.subplots(1,2)
-# ax[0].plot(linucb_item_index, '.')
-# ax[1].plot(linucb_eli_item_index, '.')
-# ax[0].set_title('LinUCB (Best arm=%s)'%(best_arm))
-# ax[1].set_title('LinUCB ELI (Best arm=%s)'%(best_arm))
-# ax[0].set_ylabel('Selected Item')
-# plt.show()
 
 
 
