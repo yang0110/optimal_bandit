@@ -94,20 +94,21 @@ class LSE():
 				hist_x_norm=np.average(hist_x_norm)
 				hist_est_y=np.average(hist_est_y)
 
-			avg_x_norm=self.beta*(hist_x_norm+self.lambda_*current_x_norm)
-			avg_est_y=hist_est_y+self.lambda_*current_est_y
+			avg_x_norm=current_x_norm+self.lambda_*hist_x_norm
+			#avg_x_norm=self.beta*self.lambda_*current_x_norm
+			avg_est_y=current_est_y+self.lambda_*hist_est_y
 
-			self.low_ucb_list[i]=avg_est_y-avg_x_norm
-			self.upper_ucb_list[i]=avg_est_y+avg_x_norm
-			self.hist_low_matrix[i,time]=avg_est_y-avg_x_norm
-			self.hist_upper_matrix[i,time]=avg_est_y+avg_x_norm
+			self.low_ucb_list[i]=avg_est_y-self.beta*avg_x_norm
+			self.upper_ucb_list[i]=avg_est_y+self.beta*avg_x_norm
+			self.hist_low_matrix[i,time]=self.low_ucb_list[i]
+			self.hist_upper_matrix[i,time]=self.upper_ucb_list[i]
 
 
 
 	def eliminate_arm_function(self):
 		self.remove=False
-		#a=self.item_set.copy()
-		for i in self.item_set:
+		a=self.item_set.copy()
+		for i in a:
 			if np.max(self.low_ucb_list)>self.upper_ucb_list[i]:
 				self.item_set.remove(i)
 				self.remove=True 

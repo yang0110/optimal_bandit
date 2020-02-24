@@ -74,8 +74,14 @@ class M_ELI():
 		self.lower_bound_list=np.zeros(self.item_num)
 		self.upper_bound_list=np.zeros(self.item_num)
 		for i in self.item_set:
-			self.lower_bound_list[i]=np.mean(self.hist_est_y_dict[i])-self.beta*np.mean(self.hist_x_norm_dict[i])+self.lambda_*(self.current_est_y_list[i]-self.beta*self.current_x_norm_list[i])
-			self.upper_bound_list[i]=np.mean(self.hist_est_y_dict[i])+self.beta*np.mean(self.hist_x_norm_dict[i])+self.lambda_*(self.current_est_y_list[i]+self.beta*self.current_x_norm_list[i])
+			current_est_y=self.current_est_y_list[i]
+			current_x_norm=self.current_x_norm_list[i]
+			hist_est_y=np.average(self.hist_est_y_dict[i])
+			hist_x_norm=np.average(self.hist_x_norm_dict[i])
+			avg_est_y=current_est_y+self.lambda_*hist_est_y
+			avg_x_norm=current_x_norm+self.lambda_*hist_x_norm
+			self.lower_bound_list[i]=avg_est_y-self.beta*avg_x_norm
+			self.upper_bound_list[i]=avg_est_y+self.beta*avg_x_norm
 			self.hist_low_matrix[i,time]=self.lower_bound_list[i]
 			self.hist_upper_matrix[i,time]=self.upper_bound_list[i]
 
