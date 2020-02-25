@@ -12,28 +12,37 @@ class LINUCB():
 		self.delta=delta
 		self.sigma=sigma
 		self.beta=0
-		self.state=state
 		self.cov=self.alpha*np.identity(self.dimension)
 		self.bias=np.zeros(self.dimension)
 		self.user_f=np.zeros(self.dimension)
 		self.x_norm_matrix=np.zeros((self.item_num, self.iteration))
 		self.item_index=np.zeros(self.iteration)
+		self.hist_low_matrix=np.zeros((self.item_num, self.iteration))
+		self.hist_upper_matrix=np.zeros((self.item_num, self.iteration))
+		self.est_y_matrix=np.zeros((self.item_num, self.iteration))
+		self.est_gaps=np.zeros((self.item_num, self.iteration))
 
-	def find_beta(self, time):
-		# self.beta=2*self.sigma*np.sqrt(14*np.log(2*self.item_num*np.log2(time/self.delta)))+np.sqrt(self.alpha)
+
+	def update_beta(self):
 		self.beta=np.sqrt(self.alpha)+np.sqrt(2*np.log(1/self.delta)+self.dimension*np.log(1+self.iteration/(self.dimension*self.alpha)))
-		self.beta=self.beta*self.state
+		self.beta=self.beta
 
 	def select_arm(self, time):
 		index_list=np.zeros(self.item_num)
+		est_y_list=np.zeros(self.item_num)
 		cov_inv=np.linalg.pinv(self.cov)
 		for i in range(self.item_num):
 			x=self.item_feature[i]
 			x_norm=np.sqrt(np.dot(np.dot(x, cov_inv),x))
 			est_y=np.dot(self.user_f, x)
-			index_list[i]=est_y+self.beta*x_norm 
+			est_y_list[i]=est_y
+			self.est_y_matrix[i,time]=est_y
+			index_list[i]=est_y+self.beta*x_norm
 			self.x_norm_matrix[i,time]=x_norm
-
+			self.hist_low_matrix[i,time]=est_y-self.beta*x_norm 
+			self.hist_upper_matrix[i,time]=est_y+self.beta*x_norm
+		best_arm=np.argmax(est_y_list)
+		self.est_gaps[:,time]=est_y_list[best_arm]-est_y_list
 		max_index=np.argmax(index_list)
 		self.item_index[time]=max_index
 		x=self.item_feature[max_index]
@@ -45,18 +54,19 @@ class LINUCB():
 		self.cov+=np.outer(x,x)
 		self.bias+=x*y
 		self.user_f=np.dot(np.linalg.pinv(self.cov), self.bias)
+		#self.user_f+=(y-np.dot(self.user_f, x))*x
 
 	def run(self, iteration):
 		cum_regret=[0]
 		error=np.zeros(self.iteration)
+		self.update_beta()
 		for time in range(iteration):
 			print('time=%s/%s ~~~~~~LinUCB'%(time, iteration))
-			self.find_beta(time)
 			x,y,regret=self.select_arm(time)
 			self.update_feature(x,y)
 			cum_regret.extend([cum_regret[-1]+regret])
 			error[time]=np.linalg.norm(self.user_f-self.user_feature)
-		return cum_regret[1:], error, self.item_index, self.x_norm_matrix
+		return cum_regret[1:], error, self.item_index, self.x_norm_matrix, self.est_y_matrix, self.hist_low_matrix, self.hist_upper_matrix
 
 
 
