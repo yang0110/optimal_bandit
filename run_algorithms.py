@@ -5,7 +5,7 @@ import seaborn as sns
 sns.set_style("white")
 from sklearn.preprocessing import Normalizer, MinMaxScaler
 import os 
-os.chdir('C:/DATA/Kaige_Research/Code/optimal_bandit/code/')
+#os.chdir('C:/DATA/Kaige_Research/Code/optimal_bandit/code/')
 from linucb import LINUCB
 from linucb_eli import LINUCB_ELI
 from eliminator import ELI
@@ -52,13 +52,13 @@ m_eli_model=M_ELI(dimension, phase_num, item_num, user_feature,item_feature, tru
 
 linucb_regret, linucb_error, linucb_item_index, linucb_x_norm_matrix, linucb_est_y_matrix, linucb_hist_low_matrix, linucb_hist_upper_matrix=linucb_model.run(iteration)
 
-eli_regret, eli_error, eli_item_index, eli_x_norm_matrix, eli_est_y_matrix, eli_hist_low_matrix, eli_hist_upper_matrix=eli_model.run(iteration)
+eli_regret, eli_error, eli_item_index, eli_x_norm_matrix, eli_est_y_matrix, eli_hist_low_matrix, eli_hist_upper_matrix, eli_item_num_list=eli_model.run(iteration)
 
-se_regret, se_error, se_item_index, se_x_norm_matrix, se_est_y_matrix, se_hist_low_matrix, se_hist_upper_matrix=se_model.run(iteration)
+se_regret, se_error, se_item_index, se_x_norm_matrix, se_est_y_matrix, se_hist_low_matrix, se_hist_upper_matrix, se_item_num_list=se_model.run(iteration)
 
-lse_regret, lse_error, lse_item_index, lse_est_y_matrix, lse_hist_low_matrix, lse_hist_upper_matrix=lse_model.run(iteration)
+lse_regret, lse_error, lse_item_index, lse_est_y_matrix, lse_hist_low_matrix, lse_hist_upper_matrix, lse_item_num_list=lse_model.run(iteration)
 
-m_eli_regret, m_eli_error, m_eli_item_index, m_eli_x_norm_matrix, m_eli_est_y_matrix,  m_eli_hist_low_matrix, m_eli_hist_upper_matrix=m_eli_model.run(iteration)
+m_eli_regret, m_eli_error, m_eli_item_index, m_eli_x_norm_matrix, m_eli_est_y_matrix,  m_eli_hist_low_matrix, m_eli_hist_upper_matrix, m_eli_item_num_list=m_eli_model.run(iteration)
 
 plt.figure(figsize=(5,5))
 plt.plot(linucb_regret, label='LinUCB')
@@ -83,11 +83,25 @@ plt.legend(loc=0, fontsize=12)
 plt.xlabel('Time', fontsize=12)
 plt.ylabel('Error', fontsize=12)
 plt.tight_layout()
+plt.savefig(path+'error'+'.png', dpi=100)
+plt.show()
+
+
+plt.figure(figsize=(5,5))
+plt.plot(eli_item_num_list, label='Eliminator')
+plt.plot(m_eli_item_num_list, label='M-Eliminator')
+plt.plot(se_item_num_list, label='SE')
+plt.plot(lse_item_num_list, label='LSE')
+plt.legend(loc=0, fontsize=12)
+plt.xlabel('Time', fontsize=12)
+plt.ylabel('Item num', fontsize=12)
+plt.tight_layout()
+plt.savefig(path+'item_num'+'.png', dpi=100)
 plt.show()
 
 beta=np.sqrt(2*np.log(1/delta))
 x=range(iteration)
-color_list=matplotlib.cm.get_cmap(name='Set1', lut=None).colors
+color_list=matplotlib.cm.get_cmap(name='tab20', lut=None).colors
 
 
 # plt.figure(figsize=(5,5))
@@ -106,12 +120,11 @@ color_list=matplotlib.cm.get_cmap(name='Set1', lut=None).colors
 
 plt.figure(figsize=(5,5))
 for i in range(item_num):
-	#plt.plot(x, eli_est_y_matrix[i], color=color_list[i], linewidth=3, label='Arm=%s'%(i))
 	plt.plot(x, se_hist_upper_matrix[i], '-.', color=color_list[i], markevery=0.05, linewidth=2, markersize=8, label='Arm=%s'%(i))
 	plt.plot(x, se_hist_low_matrix[i], '-|', color=color_list[i], markevery=0.05, linewidth=2, markersize=8)
 
 plt.legend(loc=1, fontsize=10)
-plt.ylim([-3,3])
+plt.ylim([-2,2])
 plt.xlabel('Time', fontsize=12)
 plt.ylabel('Payoff Interval', fontsize=12)
 plt.title('SE: Best Arm=%s, Worst Arm=%s'%(best_arm, worse_arm), fontsize=12)
@@ -125,7 +138,7 @@ for i in range(item_num):
 	plt.plot(x, lse_hist_upper_matrix[i], '-.', color=color_list[i], markevery=0.05, linewidth=2, markersize=8, label='Arm=%s'%(i))
 	plt.plot(x, lse_hist_low_matrix[i], '-|', color=color_list[i], markevery=0.05, linewidth=2, markersize=8)
 plt.legend(loc=1, fontsize=10)
-plt.ylim([-3,3])
+plt.ylim([-2,2])
 plt.xlabel('Time', fontsize=12)
 plt.ylabel('Payoff Interval', fontsize=12)
 plt.title('LSE: Best Arm=%s, Worst Arm=%s'%(best_arm, worse_arm), fontsize=12)
@@ -135,12 +148,11 @@ plt.show()
 
 plt.figure(figsize=(5,5))
 for i in range(item_num):
-	#plt.plot(x, eli_est_y_matrix[i], color=color_list[i], linewidth=3, label='Arm=%s'%(i))
 	plt.plot(x, eli_hist_upper_matrix[i], '-.', color=color_list[i], markevery=0.05, linewidth=2, markersize=8, label='Arm=%s'%(i))
 	plt.plot(x, eli_hist_low_matrix[i], '-|', color=color_list[i], markevery=0.05, linewidth=2, markersize=8)
 
 plt.legend(loc=1, fontsize=10)
-plt.ylim([-3,3])
+plt.ylim([-2,2])
 plt.xlabel('Time', fontsize=12)
 plt.ylabel('Payoff Interval', fontsize=12)
 plt.title('Eliminator: Best Arm=%s, Worst Arm=%s'%(best_arm, worse_arm), fontsize=12)
@@ -154,7 +166,7 @@ for i in range(item_num):
 	plt.plot(x, m_eli_hist_upper_matrix[i], '-.', color=color_list[i], markevery=0.05, linewidth=2, markersize=8, label='Arm=%s'%(i))
 	plt.plot(x, m_eli_hist_low_matrix[i], '-|', color=color_list[i], markevery=0.05, linewidth=2, markersize=8)
 plt.legend(loc=1, fontsize=10)
-plt.ylim([-3,3])
+plt.ylim([-2,2])
 plt.xlabel('Time', fontsize=12)
 plt.ylabel('Payoff Interval', fontsize=12)
 plt.title('M-Eliminator: Best Arm=%s, Worst Arm=%s'%(best_arm, worse_arm), fontsize=12)
@@ -171,7 +183,7 @@ plt.show()
 # plt.ylabel('Payoff', fontsize=12)
 # plt.title('LinUCB: Best Arm=%s, Worst Arm=%s'%(best_arm, worse_arm), fontsize=12)
 # plt.tight_layout()
-# plt.savefig(path+'linucb_payoff_each_arm'+'.png', dpi=200)
+# plt.savefig(path+'linucb_payoff'+'.png', dpi=200)
 # plt.show()
 
 plt.figure(figsize=(5,5))

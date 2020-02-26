@@ -26,6 +26,7 @@ class ELI():
 		self.hist_low_matrix=np.zeros((self.item_num, self.iteration))
 		self.hist_upper_matrix=np.zeros((self.item_num, self.iteration))
 		self.est_gaps=np.zeros((self.item_num, self.iteration))
+		self.item_num_list=self.item_num*np.ones(self.iteration)
 
 	def update_beta(self):
 		self.beta=np.sqrt(2*np.log(1/self.delta))
@@ -61,8 +62,8 @@ class ELI():
 	def update_feature(self, x,y):
 		self.cov+=np.outer(x,x)
 		self.bias+=x*y
-		#self.user_f=np.dot(np.linalg.pinv(self.cov), self.bias)
-		self.user_f+=self.gamma*(y-np.dot(self.user_f, x))*x
+		self.user_f=np.dot(np.linalg.pinv(self.cov), self.bias)
+		#self.user_f+=self.gamma*(y-np.dot(self.user_f, x))*x
 
 	def reset(self):
 		self.cov=self.alpha*np.identity(self.dimension)
@@ -79,12 +80,14 @@ class ELI():
 	def run(self, iteration):
 		cum_regret=[0]
 		error=np.zeros(self.iteration)
+		error[0]=1
 		self.update_beta()
 		for l in range(self.phase_num):
 			start_time=2**l 
 			end_time=2**(l+1)
 			for time in range(start_time, end_time):
 				print('time/iteration=%s/%s, item_num=%s ~~~~ Eliminator'%(time, iteration, len(self.item_set)))
+				self.item_num_list[time]=len(self.item_set)
 				x,y, regret=self.select_arm(time)
 				self.update_feature(x,y)
 				cum_regret.extend([cum_regret[-1]+regret])
@@ -92,7 +95,7 @@ class ELI():
 			self.eliminate_arm()
 			self.reset()
 
-		return cum_regret, error, self.item_index, self.x_norm_matrix, self.est_y_matrix, self.hist_low_matrix, self.hist_upper_matrix
+		return cum_regret, error, self.item_index, self.x_norm_matrix, self.est_y_matrix, self.hist_low_matrix, self.hist_upper_matrix, self.item_num_list
 
 
 

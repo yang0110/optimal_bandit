@@ -25,7 +25,6 @@ class LINUCB():
 
 	def update_beta(self):
 		self.beta=np.sqrt(self.alpha)+np.sqrt(2*np.log(1/self.delta)+self.dimension*np.log(1+self.iteration/(self.dimension*self.alpha)))
-		self.beta=self.beta
 
 	def select_arm(self, time):
 		index_list=np.zeros(self.item_num)
@@ -54,7 +53,6 @@ class LINUCB():
 		self.cov+=np.outer(x,x)
 		self.bias+=x*y
 		self.user_f=np.dot(np.linalg.pinv(self.cov), self.bias)
-		#self.user_f+=(y-np.dot(self.user_f, x))*x
 
 	def run(self, iteration):
 		cum_regret=[0]

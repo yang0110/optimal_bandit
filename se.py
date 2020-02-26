@@ -24,6 +24,7 @@ class SE():
 		self.upper_ucb_list=np.zeros(self.item_num)
 		self.hist_low_matrix=np.zeros((self.item_num, self.iteration))
 		self.hist_upper_matrix=np.zeros((self.item_num, self.iteration))
+		self.item_num_list=self.item_num*np.ones(self.iteration)
 
 	def update_beta(self):
 		#self.beta=np.sqrt(self.alpha)+np.sqrt(2*np.log(1/self.delta)+self.dimension*np.log(1+self.iteration/(self.dimension*self.alpha)))
@@ -78,13 +79,14 @@ class SE():
 		self.update_beta()
 		for time in range(iteration):
 			print('time/iteration, %s/%s, item_num=%s ~~~~ SE'%(time, iteration, len(self.item_set)))
+			self.item_num_list[time]=len(self.item_set)
 			x,y,regret=self.select_arm(time)
 			self.update_feature(x,y)
 			self.eliminate_arm()
 			cum_regret.extend([cum_regret[-1]+regret])
 			error[time]=np.linalg.norm(self.user_f-self.user_feature)
 
-		return cum_regret, error, self.item_index, self.x_norm_matrix, self.est_y_matrix, self.hist_low_matrix, self.hist_upper_matrix
+		return cum_regret, error, self.item_index, self.x_norm_matrix, self.est_y_matrix, self.hist_low_matrix, self.hist_upper_matrix, self.item_num_list
 
 
 

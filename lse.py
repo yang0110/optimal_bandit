@@ -40,6 +40,8 @@ class LSE():
 		self.hist_upper_matrix=np.zeros((self.item_num, self.iteration))
 		self.hist_user_f=[]
 		self.est_y_matrix=np.zeros((self.item_num, self.iteration))
+		self.item_num_list=self.item_num*np.ones(self.iteration)
+		self.cov_2=self.alpha*np.identity(self.dimension)
 
 	def initalize(self):
 		for i in range(self.item_num):
@@ -49,18 +51,20 @@ class LSE():
 			self.hist_upper_ucb_dict[i]=[]
 
 	def update_beta(self, time):
-		#self.beta=2*self.sigma*np.sqrt(14*np.log(2*self.item_num*np.log2(self.iteration/self.delta)))+np.sqrt(self.alpha)
-		self.beta=np.sqrt(2*np.log(1/self.delta))
+		self.beta=2*self.sigma*np.sqrt(14*np.log(2*self.item_num*np.log2(self.iteration/self.delta)))+np.sqrt(self.alpha)
+		#self.beta=np.sqrt(2*np.log(1/self.delta))
 
 	def select_arm(self, time):
 		cov_inv=np.linalg.pinv(self.cov)
+		cov_inv_2=np.linalg.pinv(self.cov_2)
 		x_norm_list=np.zeros(self.item_num)
 		self.current_x_norm_list=np.zeros(self.item_num)
 		self.current_est_y_list=np.zeros(self.item_num)
 		for i in self.item_set:
 			x=self.item_feature[i]
+			x_norm_2=np.sqrt(np.dot(np.dot(x, cov_inv_2),x))
 			x_norm=np.sqrt(np.dot(np.dot(x, cov_inv),x))
-			x_norm_list[i]=x_norm 
+			x_norm_list[i]=x_norm_2 
 			est_y=np.dot(self.user_f, x)
 			self.est_y_matrix[i,time]=est_y
 			self.current_x_norm_list[i]=x_norm 
@@ -77,6 +81,7 @@ class LSE():
 
 	def update_feature(self, x,y):
 		self.cov+=np.outer(x,x)
+		self.cov_2+=np.outer(x,x)
 		self.bias+=x*y
 		#self.user_f=np.dot(np.linalg.pinv(self.cov), self.bias)
 		self.user_f+=self.gamma*(y-np.dot(self.user_f, x))*x
@@ -138,7 +143,7 @@ class LSE():
 			# 	self.hist_upper_ucb_dict[i].extend([hist_mean+self.beta*hist_x_norm])
 			# self.hist_user_f.append(self.user_f)
 			#print('self.hist_user_f', self.hist_user_f)
-			self.cov=self.alpha*np.identity(self.dimension)
+			self.cov_2=self.alpha*np.identity(self.dimension)
 			#self.bias=np.zeros(self.dimension)
 			#self.user_f=np.zeros(self.dimension)
 		else:
@@ -150,6 +155,8 @@ class LSE():
 		error=np.zeros(self.iteration)
 		for time in range(self.iteration):
 			print('time/iteration, %s/%s, item_num=%s, remove=%s ~~~~~ LSE'%(time, iteration, len(self.item_set), self.remove))
+			#print('self.beta', self.beta)
+			self.item_num_list[time]=len(self.item_set)
 			self.update_beta(time)
 			x,y,regret=self.select_arm(time)
 			self.update_feature(x,y)
@@ -157,7 +164,7 @@ class LSE():
 			self.reset(time)
 			cum_regret.extend([cum_regret[-1]+regret])
 			error[time]=np.linalg.norm(self.user_f-self.user_feature)
-		return cum_regret, error, self.item_index, self.est_y_matrix, self.hist_low_matrix, self.hist_upper_matrix
+		return cum_regret, error, self.item_index, self.est_y_matrix, self.hist_low_matrix, self.hist_upper_matrix, self.item_num_list
 
 
 
