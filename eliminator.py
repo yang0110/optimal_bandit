@@ -24,6 +24,18 @@ class ELI():
 		self.upper_matrix=np.zeros((self.item_num, self.iteration))
 		self.payoff_error_matrix=np.zeros((self.item_num, self.iteration))
 		self.worst_payoff_error=np.zeros(self.iteration)
+		self.noise_norm=np.zeros(self.iteration)
+		self.noise_bias=np.zeros(self.dimension)
+		self.bound=np.zeros(self.iteration)	
+
+	def update_error(self, time):
+		cov_inv=np.linalg.pinv(self.cov)
+		bound_list=np.zeros(self.item_num)
+		for i in self.item_set:
+			x=self.item_feature[i]
+			x_norm=np.sqrt(np.dot(np.dot(x, cov_inv), x))
+			bound_list[i]=self.beta*x_norm
+		self.bound[time]=np.max(bound_list)
 
 	def select_arm(self, time):
 		x_norm_list=np.zeros(self.item_num)
@@ -35,9 +47,13 @@ class ELI():
 
 		max_index=np.argmax(x_norm_list)
 		self.item_index[time]=max_index
-		payoff=self.true_payoffs[max_index]+np.random.normal(scale=self.sigma)
-		regret=np.max(self.true_payoffs)-self.true_payoffs[max_index]
+		noise=np.random.normal(scale=self.sigma)
+		payoff=self.true_payoffs[max_index]+noise
+		regret=np.max(self.true_payoffs)-payoff
 		x=self.item_feature[max_index]
+		x_best=self.item_feature[np.argmax(self.true_payoffs)]
+		self.noise_bias+=x*noise 
+		self.noise_norm[time]=np.abs(np.dot(x_best, np.dot(cov_inv, self.noise_bias)))
 		return x, payoff, regret 
 
 	def update_feature(self,x,y):
@@ -63,6 +79,7 @@ class ELI():
 		self.cov=self.alpha*np.identity(self.dimension)
 		self.bias=np.zeros(self.dimension)
 		self.user_f=np.zeros(self.dimension)
+		self.noise_bias=np.zeros(self.dimension)
 
 	def eliminate_arm(self):
 		a=self.item_set.copy()
@@ -83,6 +100,7 @@ class ELI():
 				print('time/iteration=%s/%s, item_num=%s ~~~~ Eliminator'%(time, self.iteration, len(self.item_set)))
 				x,y, regret=self.select_arm(time)
 				self.update_feature(x,y)
+				self.update_error(time)
 				self.update_bounds(time)
 				cum_regret.extend([cum_regret[-1]+regret])
 				error[time]=np.linalg.norm(self.user_f-self.user_feature)
@@ -90,7 +108,7 @@ class ELI():
 			self.eliminate_arm()
 			self.reset()
 
-		return cum_regret, error, self.item_index, self.upper_matrix, self.low_matrix, self.payoff_error_matrix, self.worst_payoff_error
+		return cum_regret, error, self.item_index, self.upper_matrix, self.low_matrix, self.payoff_error_matrix, self.worst_payoff_error, self.noise_norm, self.bound
 
 
 

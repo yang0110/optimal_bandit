@@ -20,10 +20,20 @@ class LINUCB():
 		self.upper_matrix=np.zeros((self.item_num, self.iteration))
 		self.payoff_error_matrix=np.zeros((self.item_num, self.iteration))
 		self.worst_payoff_error=np.zeros(self.iteration)
+		self.noise_norm=np.zeros(self.iteration)
+		self.noise_bias=np.zeros(self.dimension)
+		self.bound=np.zeros(self.iteration)
 
 
-	def update_beta(self):
-		self.beta=np.sqrt(self.alpha)+np.sqrt(2*np.log(1/self.delta)+self.dimension*np.log(1+self.iteration/(self.dimension*self.alpha)))
+	def update_error(self, time):
+		# b=np.sqrt(self.alpha)+np.sqrt(2*np.log(1/self.delta)+self.dimension*np.log(1+time/(self.dimension*self.alpha)))
+		cov_inv=np.linalg.pinv(self.cov)
+		bound_list=np.zeros(self.item_num)
+		for i in range(self.item_num):
+			x=self.item_feature[i]
+			x_norm=np.sqrt(np.dot(np.dot(x, cov_inv),x))
+			bound_list[i]=self.beta*x_norm
+		self.bound[time]=np.max(bound_list)
 
 	def select_arm(self, time):
 		index_list=np.zeros(self.item_num)
@@ -37,11 +47,16 @@ class LINUCB():
 			self.upper_matrix[i,time]=est_y+self.beta*x_norm
 			self.payoff_error_matrix[i, time]=np.abs(self.true_payoffs[i]-est_y)
 
+
 		max_index=np.argmax(index_list)
 		self.item_index[time]=max_index
 		x=self.item_feature[max_index]
-		payoff=self.true_payoffs[max_index]+np.random.normal(scale=self.sigma)
+		noise=np.random.normal(scale=self.sigma)
+		payoff=self.true_payoffs[max_index]+noise 
 		regret=np.max(self.true_payoffs)-payoff
+		x_best=self.item_feature[np.argmax(self.true_payoffs)]
+		self.noise_bias+=x*noise
+		self.noise_norm[time]=np.abs(np.dot(x_best, np.dot(cov_inv, self.noise_bias)))
 		return x, payoff, regret 
 
 	def update_feature(self, x,y):
@@ -56,10 +71,11 @@ class LINUCB():
 			print('time=%s/%s ~~~~~~LinUCB'%(time, self.iteration))
 			x,y,regret=self.select_arm(time)
 			self.update_feature(x,y)
+			self.update_error(time)
 			cum_regret.extend([cum_regret[-1]+regret])
 			error[time]=np.linalg.norm(self.user_f-self.user_feature)
 			self.worst_payoff_error[time]=np.max(self.payoff_error_matrix[:,time])
-		return cum_regret[1:], error, self.item_index, self.upper_matrix, self.low_matrix, self.payoff_error_matrix, self.worst_payoff_error
+		return cum_regret[1:], error, self.item_index, self.upper_matrix, self.low_matrix, self.payoff_error_matrix, self.worst_payoff_error, self.noise_norm, self.bound
 
 
 
