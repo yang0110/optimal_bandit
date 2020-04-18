@@ -13,7 +13,7 @@ class LSE():
 		self.sigma=sigma
 		# self.beta=2*self.sigma*np.sqrt(14*np.log(2*self.item_num*np.log2(self.iteration/self.delta)))+np.sqrt(self.alpha)
 		# self.beta=2*self.sigma*np.sqrt(14*np.log(2/self.delta))+np.sqrt(self.alpha)
-		self.beta=np.sqrt(2*np.log(1/self.delta))
+		self.beta=np.sqrt(2*np.log(1/self.delta))+np.sqrt(self.alpha)
 		self.cov=self.alpha*np.identity(self.dimension)
 		self.cov2=self.alpha*np.identity(self.dimension)
 		self.bias=np.zeros(self.dimension)

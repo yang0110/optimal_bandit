@@ -47,7 +47,6 @@ class LINUCB():
 			self.upper_matrix[i,time]=est_y+self.beta*x_norm
 			self.payoff_error_matrix[i, time]=np.abs(self.true_payoffs[i]-est_y)
 
-
 		max_index=np.argmax(index_list)
 		self.item_index[time]=max_index
 		x=self.item_feature[max_index]

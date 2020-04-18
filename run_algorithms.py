@@ -20,7 +20,7 @@ phase_num=11
 iteration=2**phase_num
 sigma=0.01# noise
 delta=0.1# high probability
-alpha=0.5 # regularizer
+alpha=0.1 # regularizer
 
 
 item_feature=Normalizer().fit_transform(np.random.normal(size=(item_num, dimension)))
@@ -130,7 +130,7 @@ plt.show()
 
 
 plt.figure(figsize=(5,5))
-plt.plot(lse_worst_payoff_error, 'y',linewidth=2, label='LSE')
+plt.plot(lse_worst_payoff_error, 'r',linewidth=2, label='LSE')
 plt.plot(eli_error_bound, 'y-.', markevery=0.01, linewidth=2, label='SE-Bound')
 plt.legend(loc=1, fontsize=10)
 plt.xlabel('Time', fontsize=12)

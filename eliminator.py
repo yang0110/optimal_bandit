@@ -12,7 +12,7 @@ class ELI():
 		self.alpha=alpha
 		self.delta=delta
 		self.sigma=sigma
-		self.beta=np.sqrt(2*np.log(1/self.delta))
+		self.beta=np.sqrt(2*np.log(1/self.delta))+np.sqrt(self.alpha)
 		self.cov=self.alpha*np.identity(self.dimension)
 		self.bias=np.zeros(self.dimension)
 		self.user_f=np.zeros(self.dimension)
