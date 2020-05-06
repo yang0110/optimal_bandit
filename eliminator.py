@@ -49,7 +49,7 @@ class ELI():
 		self.item_index[time]=max_index
 		noise=np.random.normal(scale=self.sigma)
 		payoff=self.true_payoffs[max_index]+noise
-		regret=np.max(self.true_payoffs)-payoff
+		regret=np.max(self.true_payoffs)-payoff+noise
 		x=self.item_feature[max_index]
 		x_best=self.item_feature[np.argmax(self.true_payoffs)]
 		self.noise_bias+=x*noise 
