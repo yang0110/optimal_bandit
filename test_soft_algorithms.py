@@ -31,12 +31,9 @@ loop=1
 lse_soft_loops=1
 
 
-linucb_regret_matrix=np.zeros((loop, iteration))
-lse_regret_matrix=np.zeros((loop, iteration))
-eli_regret_matrix=np.zeros((loop, iteration))
+
 lse_soft_regret_matrix=np.zeros((loop, iteration))
 lse_soft_beta_matrix=np.zeros((loop, iteration))
-lse_soft_gamma_matrix=np.zeros((loop, iteration))
 lse_soft_prob_best_arm_matrix=np.zeros((loop, iteration))
 lse_soft_prob_worst_arm_matrix=np.zeros((loop, iteration))
 
