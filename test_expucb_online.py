@@ -18,21 +18,23 @@ from lints import LINTS
 from linphe import LINPHE
 from exp3 import EXP3
 from giro import GIRO
+from expucb_online import Expucb_online
 from utils import *
 path='../results/lse_soft_results/'
-# np.random.seed(2018)
+np.random.seed(2018)
 
 user_num=1
 item_num=20
-dimension=10
-phase_num=11
+dimension=5
+phase_num=10
 iteration=2**phase_num
 sigma=0.01# noise
 delta=0.1# high probability
 alpha=1 # regularizer
 step_size_beta=0.01
+step_size_user_f=0.05
 weight1=0.01
-beta_online=10
+beta_online=2
 gamma=0
 time_width=20
 loop_num=1
@@ -42,7 +44,7 @@ beta_matrix=np.zeros((loop_num, iteration))
 l_matrix=np.zeros((loop_num, iteration))
 g_matrix=np.zeros((loop_num, iteration))
 p_matrix=np.zeros((loop_num, iteration))
-
+td_matrix=np.zeros((loop_num, iteration))
 user_feature=np.random.normal(size=dimension)
 user_feature=user_feature/np.linalg.norm(user_feature)
 item_features=np.random.multivariate_normal(mean=np.zeros(dimension), cov=np.linalg.pinv(2*np.identity(dimension)), size=item_num)
@@ -52,15 +54,15 @@ best_arm=np.argmax(true_payoffs)
 
 for l in range(loop_num):
 	# item_features=Normalizer().fit_transform(np.random.normal(size=(item_num, dimension)))
-	online_model=LSE_soft_online(dimension, iteration, item_num, user_feature, item_features, true_payoffs, alpha, sigma, step_size_beta, weight1, beta_online, gamma, time_width)
-	online_regret, online_error, online_prob_matrix, online_s_matrix, online_beta_list, online_l_set, online_gradient=online_model.run()
+	online_model=Expucb_online(dimension, iteration, item_num, user_feature, item_features, true_payoffs, alpha, sigma, step_size_beta,step_size_user_f, weight1, beta_online, gamma, time_width)
+	online_regret, online_error, online_prob_matrix, online_s_matrix, online_beta_list, online_l_set, online_gradient, online_td=online_model.run()
 
 	regret_matrix[l]=online_regret
 	beta_matrix[l]=online_beta_list
 	l_matrix[l]=online_l_set
 	p_matrix[l]=online_prob_matrix[best_arm]
 	g_matrix[l]=online_gradient
-
+	td_matrix[l]=online_td
 
 beta_mean=np.mean(beta_matrix, axis=0)
 beta_std=beta_matrix.std(0)
@@ -72,28 +74,33 @@ p_mean=np.mean(p_matrix, axis=0)
 p_std=p_matrix.std(0)
 g_mean=np.mean(g_matrix, axis=0)
 g_std=g_matrix.std(0)
+td_mean=np.mean(td_matrix, axis=0)
+td_std=td_mean.std(0)
 
 
-np.save(path+'online_beta_mean_item_%s_d_%s_t_%s_wind_%s_beta_%s.npy'%(item_num, dimension, phase_num, time_width,beta_online), beta_mean)
-np.save(path+'online_beta_std_item_%s_d_%s_t_%s_wind_%s_beta_%s.npy'%(item_num, dimension, phase_num, time_width,beta_online), beta_std)
+np.save(path+'exp_online_beta_mean_item_%s_d_%s_t_%s_wind_%s_beta_%s.npy'%(item_num, dimension, phase_num, time_width,beta_online), beta_mean)
+np.save(path+'exp_online_beta_std_item_%s_d_%s_t_%s_wind_%s_beta_%s.npy'%(item_num, dimension, phase_num, time_width,beta_online), beta_std)
 
-np.save(path+'online_regret_mean_item_%s_d_%s_t_%s_wind_%s_beta_%s.npy'%(item_num, dimension, phase_num, time_width,beta_online), regret_mean)
-np.save(path+'online_regret_std_item_%s_d_%s_t_%s_wind_%s_beta_%s.npy'%(item_num, dimension, phase_num, time_width,beta_online), regret_std)
+np.save(path+'exp_online_regret_mean_item_%s_d_%s_t_%s_wind_%s_beta_%s.npy'%(item_num, dimension, phase_num, time_width,beta_online), regret_mean)
+np.save(path+'exp_online_regret_std_item_%s_d_%s_t_%s_wind_%s_beta_%s.npy'%(item_num, dimension, phase_num, time_width,beta_online), regret_std)
 
-np.save(path+'online_l_mean_item_%s_d_%s_t_%s_wind_%s_beta_%s.npy'%(item_num, dimension, phase_num, time_width,beta_online), l_mean)
-np.save(path+'online_l_std_item_%s_d_%s_t_%s_wind_%s_beta_%s.npy'%(item_num, dimension, phase_num, time_width,beta_online), l_std)
+np.save(path+'exp_online_l_mean_item_%s_d_%s_t_%s_wind_%s_beta_%s.npy'%(item_num, dimension, phase_num, time_width,beta_online), l_mean)
+np.save(path+'exp_online_l_std_item_%s_d_%s_t_%s_wind_%s_beta_%s.npy'%(item_num, dimension, phase_num, time_width,beta_online), l_std)
 
 
-np.save(path+'online_p_mean_item_%s_d_%s_t_%s_wind_%s_beta_%s.npy'%(item_num, dimension, phase_num, time_width,beta_online), p_mean)
-np.save(path+'online_p_std_item_%s_d_%s_t_%s_wind_%s_beta_%s.npy'%(item_num, dimension, phase_num, time_width,beta_online), p_std)
+np.save(path+'exp_online_p_mean_item_%s_d_%s_t_%s_wind_%s_beta_%s.npy'%(item_num, dimension, phase_num, time_width,beta_online), p_mean)
+np.save(path+'exp_online_p_std_item_%s_d_%s_t_%s_wind_%s_beta_%s.npy'%(item_num, dimension, phase_num, time_width,beta_online), p_std)
 
-np.save(path+'online_g_mean_item_%s_d_%s_t_%s_wind_%s_beta_%s.npy'%(item_num, dimension, phase_num, time_width,beta_online), g_mean)
-np.save(path+'online_g_std_item_%s_d_%s_t_%s_wind_%s_beta_%s.npy'%(item_num, dimension, phase_num, time_width,beta_online), g_std)
+np.save(path+'exp_online_g_mean_item_%s_d_%s_t_%s_wind_%s_beta_%s.npy'%(item_num, dimension, phase_num, time_width,beta_online), g_mean)
+np.save(path+'exp_online_g_std_item_%s_d_%s_t_%s_wind_%s_beta_%s.npy'%(item_num, dimension, phase_num, time_width,beta_online), g_std)
+
+np.save(path+'exp_online_td_mean_item_%s_d_%s_t_%s_wind_%s_beta_%s.npy'%(item_num, dimension, phase_num, time_width,beta_online), td_mean)
+np.save(path+'exp_online_td_std_item_%s_d_%s_t_%s_wind_%s_beta_%s.npy'%(item_num, dimension, phase_num, time_width,beta_online), td_std)
 
 x=range(iteration)
 plt.figure(figsize=(5,5))
 plt.plot(x, beta_mean, color='y', linewidth=2, label='d = %s'%(dimension))
-# plt.fill_between(x, beta_mean-beta_std*0.95, beta_mean+beta_std*0.95, color='y', alpha=0.2)
+plt.fill_between(x, beta_mean-beta_std*0.95, beta_mean+beta_std*0.95, color='y', alpha=0.2)
 plt.legend(loc=1, fontsize=12)
 plt.xlabel('Training iteration', fontsize=14)
 plt.ylabel('Beta', fontsize=14)
@@ -104,7 +111,7 @@ plt.show()
 
 plt.figure(figsize=(5,5))
 plt.plot(x, regret_mean, color='r', linewidth=2, label='d = %s'%(dimension))
-# plt.fill_between(x, regret_mean-regret_std*0.95, regret_mean+regret_std*0.95, color='r', alpha=0.2)
+plt.fill_between(x, regret_mean-regret_std*0.95, regret_mean+regret_std*0.95, color='r', alpha=0.2)
 plt.legend(loc=1, fontsize=12)
 plt.xlabel('Training iteration', fontsize=14)
 plt.ylabel('Cumulative Regret', fontsize=14)
@@ -120,13 +127,29 @@ plt.ylabel('Probability', fontsize=14)
 plt.tight_layout()
 plt.show()
 
+x=range(iteration)
 plt.figure(figsize=(5,5))
-plt.plot(g_mean)
+plt.plot(x, g_mean, '-', markevery=0.1, color='r')
+plt.fill_between(x, g_mean-g_std*0.95, g_mean+g_std*0.95, color='r')
 plt.xlabel('Time', fontsize=14)
 plt.ylabel('Gradient', fontsize=14)
 plt.tight_layout()
 plt.show()
 
+plt.figure(figsize=(5,5))
+plt.plot(td_mean)
+plt.xlabel('Time', fontsize=14)
+plt.ylabel('Td-Error', fontsize=14)
+plt.tight_layout()
+plt.show()
+
+
+plt.figure(figsize=(5,5))
+plt.plot(online_error)
+plt.xlabel('Time', fontsize=14)
+plt.ylabel('online error', fontsize=14)
+plt.tight_layout()
+plt.show()
 
 # beta_mean_5=np.load(path+'online_beta_mean_item_20_d_5_t_11_wind_20.npy')
 # beta_std_5=np.load(path+'online_beta_std_item_20_d_5_t_11_wind_20.npy')

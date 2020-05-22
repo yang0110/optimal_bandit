@@ -4,8 +4,8 @@ from numpy.random import choice
 from sklearn.preprocessing import Normalizer, MinMaxScaler
 
 
-class LSE_soft_online():
-	def __init__(self, dimension, iteration, item_num, user_feature, item_features, true_payoffs, alpha, sigma, step_size_beta, weight1, beta, gamma, time_width):
+class Expucb_online():
+	def __init__(self, dimension, iteration, item_num, user_feature, item_features, true_payoffs, alpha, sigma, step_size_beta, step_size_user_f, weight1, beta, gamma, time_width):
 		self.dimension=dimension
 		self.iteration=iteration
 		self.item_num=item_num 
@@ -20,6 +20,7 @@ class LSE_soft_online():
 		self.a=beta
 		self.gamma=gamma
 		self.step_size_beta=step_size_beta
+		self.step_size_user_f=step_size_user_f
 		self.user_f=np.zeros(self.dimension)
 		self.cov=self.alpha*np.identity(self.dimension)
 		self.bias=np.zeros(self.dimension)
@@ -32,7 +33,8 @@ class LSE_soft_online():
 		self.gamma_log_grad_matrix=np.zeros((self.iteration, self.item_num))
 		self.est_y_matrix=np.zeros((self.iteration, self.item_num))
 		self.beta_grad=0
-		self.gamma_grad=0
+		self.theta_grad=0
+		self.td_error=0
 		self.lagrange_grad_matrix=np.zeros((self.iteration, self.item_num))
 		self.g_s_matrix=np.zeros((self.item_num, self.iteration))
 		self.s_matrix=np.zeros((self.item_num, self.iteration))
@@ -40,10 +42,14 @@ class LSE_soft_online():
 		self.l_set=[]
 
 
-	def update_feature(self,x,y):
+	def update_feature(self,x, y, index, time):
 		self.cov+=np.outer(x,x)
 		self.bias+=x*y
 		self.user_f=np.dot(np.linalg.pinv(self.cov), self.bias)
+		# random_arm=np.random.choice(range(self.item_num))
+		# self.td_error=y+np.sum(self.soft_max_matrix[time]*self.est_y_matrix[time])-self.est_y_matrix[time, index]
+		# print('np.sum(self.soft_max_matrix[time]*self.est_y_matrix[time])', np.sum(self.soft_max_matrix[time]*self.est_y_matrix[time]))
+		# self.user_f+=self.step_size_user_f*self.td_error*x
 
 	def select_arm(self, time, old_payoff):
 		self.s_list=np.zeros(self.item_num)
@@ -56,10 +62,10 @@ class LSE_soft_online():
 		for i in range(self.item_num):
 			x=self.item_features[i]
 			self.x_norm_list[i]=np.sqrt(np.dot(np.dot(x, cov_inv),x))
-			# est_y_list[i]=np.dot(self.user_f, x)
-			est_y_list[i]=np.dot(self.user_feature, x)
+			est_y_list[i]=np.dot(self.user_f, x)
+			est_y_list[i]=np.dot(self.user_feature,x)
 			self.low_bound_list[i]=np.dot(self.user_f, x)-self.beta*np.sqrt(np.dot(np.dot(x, cov_inv),x))
-			self.est_y_matrix[time, i]=np.dot(self.user_f, x)
+			self.est_y_matrix[time, i]=np.dot(self.user_feature, x)
 
 		for j in range(self.item_num):
 			index=np.argmax(self.low_bound_list)
@@ -103,34 +109,34 @@ class LSE_soft_online():
 		a=np.log((delta*cl)/(1-delta))
 		max_s=np.max(self.s_list)
 		self.gamma=a/max_s
-		if time<=self.time_width:
-			self.gamma=0
-		else:
-			pass
-		self.gamma=0
+		# if time<=self.time_width:
+		# 	self.gamma=0
+		# else:
+		# 	pass
+		# self.gamma=0
 
 	def update_beta_grad(self, time):
-		self.beta_grad=0
-		if time%self.time_width!=0:
-			pass
-		else:
-			for t in range(time-self.time_width, time):
-				if t<0:
-					pass 
-				else:
-					temp_2=np.sum([a*b*c+d for a,b,c,d in zip(self.est_y_matrix[t], self.soft_max_matrix[t], self.beta_log_grad_matrix[t], self.lagrange_grad_matrix[t])])
-					self.beta_grad+=temp_2
+		# self.beta_grad=0
+		# if time%self.time_width!=0:
+		# 	pass
+		# else:
+		# 	for t in range(time-self.time_width, time):
+		# 		if t<0:
+		# 			pass 
+		# 		else:
+		temp_2=np.sum([a*b*c+d for a,b,c,d in zip(self.est_y_matrix[time], self.soft_max_matrix[time], self.beta_log_grad_matrix[time], self.lagrange_grad_matrix[time])])
+		self.beta_grad=temp_2
 
-	def update_beta(self, time):
+	def update_beta(self, index, time):
 		# if (1/(time+1))>self.step_size_beta:
 		# 	pass
 		# else:
 		# 	self.step_size_beta=1/(2*time+1)
-		self.beta+=self.step_size_beta*self.beta_grad
-		if time<=self.time_width:
-			self.beta=self.a
-		else:
-			pass
+		self.beta+=self.step_size_beta*self.beta_grad*np.sum(self.soft_max_matrix[time]*self.est_y_matrix[time])
+		# if time<=self.time_width:
+		# 	self.beta=self.a
+		# else:
+		# 	pass
 
 	def run(self):
 		error_list=np.zeros(self.iteration)
@@ -140,23 +146,25 @@ class LSE_soft_online():
 		old_payoff=0
 		len_l_set=np.zeros(self.iteration)
 		gradient_list=np.zeros(self.iteration)
+		td_list=np.zeros(self.iteration)
 		for time in range(self.iteration):
-			print('time/iteration, %s/%s beta=%s ~~~~~ LSE-Soft-Online'%(time, self.iteration, np.round(self.beta, decimals=2)))
+			print('time/iteration, %s/%s beta=%s ~~~~~ ExpUCB-Online'%(time, self.iteration, np.round(self.beta, decimals=2)))
 			ind, x, y, regret=self.select_arm(time, old_payoff)
 			old_payoff=y
-			self.update_feature(x, y)
+			self.update_feature(x, y, ind, time)
 			self.update_gamma(time)
 			self.find_log_grad_beta(time)
 			self.find_lagrange_grad(time)
 			self.update_beta_grad(time)
-			self.update_beta(time)
+			self.update_beta(ind, time)
 			beta_list[time]=self.beta
 			len_l_set[time]=len(np.unique(self.l_set))
 			gradient_list[time]=self.beta_grad
+			td_list[time]=self.td_error
 			cum_regret.extend([cum_regret[-1]+regret])
 			error_list[time]=np.linalg.norm(self.user_f-self.user_feature)
 
-		return cum_regret[1:], error_list, self.soft_max_matrix.T, self.s_matrix, beta_list, len_l_set, gradient_list
+		return cum_regret[1:], error_list, self.soft_max_matrix.T, self.s_matrix, beta_list, len_l_set, gradient_list, td_list
 
 		
 

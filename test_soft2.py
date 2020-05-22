@@ -159,11 +159,11 @@ def avg_mean(data):
 
 
 plt.figure(figsize=(5,5))
-plt.plot(beta_list[:-10], avg_mean(regret_mean_5_8), color='g', label='d=5, T=8')
-# plt.plot(beta_list[:-10], avg_mean(regret_mean_5_9), color='c', label='d=5, T=9')
-plt.plot(beta_list[:-10], avg_mean(regret_mean_5_10), color='b', label='d=5, T=10')
-plt.plot(beta_list[:-10], avg_mean(regret_mean_10), color='r', label='d=10, T=10')
-plt.plot(beta_list[:-10], avg_mean(regret_mean_15), color='y', label='d=15, T=10')
+plt.plot(beta_list[:-10], avg_mean(regret_mean_5_8), color='g', label='d=5, T=2^8')
+plt.plot(beta_list[:-10], avg_mean(regret_mean_5_9), color='c', label='d=5, T=2^9')
+plt.plot(beta_list[:-10], avg_mean(regret_mean_5_10), color='b', label='d=5, T=2^10')
+plt.plot(beta_list[:-10], avg_mean(regret_mean_10), color='r', label='d=10, T=2^10')
+plt.plot(beta_list[:-10], avg_mean(regret_mean_15), color='y', label='d=15, T=2^10')
 plt.legend(loc=1, fontsize=12)
 plt.ylabel('Regret', fontsize=14)
 plt.xlabel('Beta', fontsize=14)
@@ -202,25 +202,21 @@ plt.show()
 
 
 plt.figure(figsize=(5,5))
-plt.plot(beta_list, regret_mean_5_8, color='g', label='d=5, T=8')
+plt.plot(beta_list, regret_mean_5_8, color='g', label='d=5, T=2^8')
 plt.fill_between(beta_list, regret_mean_5_8-regret_std_5_8*0.95, regret_mean_5_8+regret_std_5_8*0.95, color='g', alpha=0.1)
 
-# plt.plot(beta_list, regret_mean_5_9, color='b', label='d=5, T=9')
-# plt.fill_between(beta_list, regret_mean_5_9-regret_std_5_9*0.95, regret_mean_5_9+regret_std_5_9*0.95, color='b', alpha=0.1)
+plt.plot(beta_list, regret_mean_5_9, color='b', label='d=5, T=2^9')
+plt.fill_between(beta_list, regret_mean_5_9-regret_std_5_9*0.95, regret_mean_5_9+regret_std_5_9*0.95, color='b', alpha=0.1)
 
 
-plt.plot(beta_list, regret_mean_5_10, color='c', label='d=5, T=10')
+plt.plot(beta_list, regret_mean_5_10, color='c', label='d=5, T=2^10')
 plt.fill_between(beta_list, regret_mean_5_10-regret_std_5_10*0.95, regret_mean_5_10+regret_std_5_10*0.95, color='c', alpha=0.1)
 
-plt.plot(beta_list, regret_mean_10, color='r', label='d=10, T=10')
+plt.plot(beta_list, regret_mean_10, color='r', label='d=10, T=2^10')
 plt.fill_between(beta_list, regret_mean_10-regret_std_10*0.95, regret_mean_10+regret_std_10*0.95, color='r', alpha=0.1)
 
-plt.plot(beta_list, regret_mean_15, color='y', label='d=15, T=10')
+plt.plot(beta_list, regret_mean_15, color='y', label='d=15, T=2^10')
 plt.fill_between(beta_list, regret_mean_15-regret_std_15*0.95, regret_mean_15+regret_std_15*0.95, color='y', alpha=0.1)
-
-# plt.plot(beta_list, regret_mean_5_11, color='c', label='d=5, T=10')
-# plt.fill_between(beta_list, regret_mean_5_11-regret_std_5_11*0.95, regret_mean_5_11+regret_std_5_11*0.95, color='c', alpha=0.1)
-
 
 plt.legend(loc=1, fontsize=12)
 plt.ylabel('Regret', fontsize=14)
