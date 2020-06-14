@@ -7,6 +7,14 @@ import scipy
 import os 
 from sklearn import datasets
 
+def generate_data(dimension, item_num):
+	item_f=np.random.uniform(low=-1, high=1, size=(item_num, dimension))
+	item_f=Normalizer().fit_transform(item_f)
+	user_f=np.random.uniform(low=-1, high=1, size=dimension)
+	user_f=user_f/np.linalg.norm(user_f)
+	return user_f, item_f
+
+
 def create_networkx_graph(node_num, adj_matrix):
 	G=nx.Graph()
 	G.add_nodes_from(list(range(node_num)))

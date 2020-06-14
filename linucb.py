@@ -12,8 +12,7 @@ class LINUCB():
 		self.alpha=alpha
 		self.delta=delta
 		self.sigma=sigma
-		self.beta=np.sqrt(self.alpha)+np.sqrt(self.sigma)*np.sqrt(2*np.log(1/self.delta)+self.dimension*np.log(1+self.iteration/self.dimension))
-		# self.beta=beta
+		self.beta=beta
 		self.cov=self.alpha*np.identity(self.dimension)
 		self.bias=np.zeros(self.dimension)
 		self.user_f=np.zeros(self.dimension)
@@ -21,7 +20,7 @@ class LINUCB():
 
 
 	def update_beta(self, time):
-		self.beta=np.sqrt(self.alpha)+np.sqrt(self.sigma)*np.sqrt(self.dimension*np.log(1+self.iteration/self.dimension)+2*np.log(1/self.delta))
+		self.beta=np.sqrt(self.alpha)+self.sigma*np.sqrt(self.dimension*np.log(1+time/self.dimension)+2*np.log(1/self.delta))
 
 	def select_arm(self, time):
 		index_list=np.zeros(self.item_num)
@@ -32,15 +31,13 @@ class LINUCB():
 			est_y=np.dot(self.user_f, x)
 			index_list[i]=est_y+self.beta*x_norm
 
-		max_index=np.argmax(index_list)
-		self.item_index[time]=max_index
-		x=self.item_feature[max_index]
+		index=np.argmax(index_list)
+		self.item_index[time]=index
+		x=self.item_feature[index]
 		noise=np.random.normal(scale=self.sigma)
-		payoff=self.true_payoffs[max_index]
-		# +noise 
-		regret=np.max(self.true_payoffs)-payoff+noise
-		x_best=self.item_feature[np.argmax(self.true_payoffs)]
-		return x, payoff, regret 
+		payoff=self.true_payoffs[index]+noise 
+		regret=np.max(self.true_payoffs)-self.true_payoffs[index]
+		return x, payoff, regret, index
 
 	def update_feature(self, x,y):
 		self.cov+=np.outer(x,x)
@@ -53,11 +50,10 @@ class LINUCB():
 		for time in range(self.iteration):
 			print('time=%s/%s ~~~~~~LinUCB'%(time, self.iteration))
 			# self.update_beta(time)
-			print('self.beta', np.round(self.beta))
-			x,y,regret=self.select_arm(time)
+			x,y,regret, index=self.select_arm(time)
 			self.update_feature(x,y)
 			cum_regret.extend([cum_regret[-1]+regret])
-			error[time]=np.linalg.norm(self.user_f-self.user_feature)
+			error[time]=np.abs(self.true_payoffs[index]-np.dot(self.user_f, x))
 		return cum_regret[1:], error
 
 

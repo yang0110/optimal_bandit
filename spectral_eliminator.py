@@ -1,6 +1,6 @@
 import numpy as np 
 
-class ELI():
+class Spec_Eli():
 	def __init__(self, dimension, phase_num, item_num, user_feature, item_feature, true_payoffs, alpha, delta, sigma, beta):
 		self.dimension=dimension
 		self.phase_num=phase_num
@@ -29,24 +29,19 @@ class ELI():
 
 
 	def select_arm(self, time):
-		# x_norm_list=np.zeros(self.item_num)
-		# cov_inv=np.linalg.pinv(self.cov)
-		# for i in self.item_set:
-		# 	x=self.item_feature[i]
-		# 	x_norm=np.sqrt(np.dot(np.dot(x, cov_inv),x))
-		# 	x_norm_list[i]=x_norm
+		x_norm_list=np.zeros(self.item_num)
+		cov_inv=np.linalg.pinv(self.cov)
+		for i in self.item_set:
+			x=self.item_feature[i]
+			x_norm=np.sqrt(np.dot(np.dot(x, cov_inv),x))
+			x_norm_list[i]=x_norm
 
-		# max_index=np.argmax(x_norm_list)
-		# noise=np.random.normal(scale=self.sigma)
-		# payoff=self.true_payoffs[max_index]+noise
-		# regret=np.max(self.true_payoffs)-self.true_payoffs[max_index]
-		# x=self.item_feature[max_index]
-		
-		max_index=np.random.choice(self.item_set)
+		max_index=np.argmax(x_norm_list)
 		noise=np.random.normal(scale=self.sigma)
 		payoff=self.true_payoffs[max_index]+noise
 		regret=np.max(self.true_payoffs)-self.true_payoffs[max_index]
 		x=self.item_feature[max_index]
+		
 		return x, payoff, regret, max_index
 
 	def update_feature(self,x,y):
@@ -88,7 +83,7 @@ class ELI():
 			start_time=2**l 
 			end_time=2**(l+1)
 			for time in range(start_time, end_time):
-				print('time/iteration=%s/%s, item_num=%s ~~~~ Eliminator'%(time, self.iteration, len(self.item_set)))
+				print('time/iteration=%s/%s, item_num=%s ~~~~ SpectralEliminator'%(time, self.iteration, len(self.item_set)))
 				x,y, regret, index=self.select_arm(time)
 				# self.update_beta()
 				self.update_feature(x,y)
